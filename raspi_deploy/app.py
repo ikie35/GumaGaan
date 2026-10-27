@@ -39,46 +39,75 @@ class PiCameraWrapper:
         self.backend = None
         self.picam2 = None
         self.cap = None
+        self.consecutive_failures = 0
         self._init_camera()
 
     def _init_camera(self):
-        # 1. Try native Picamera2 (Raspberry Pi OS Bookworm official stack)
+        # 1. Native Picamera2 (Raspberry Pi OS Bookworm official stack)
         try:
             from picamera2 import Picamera2
+            print("[Camera] Attempting native Picamera2 initialization...")
             p2 = Picamera2()
-            config = p2.create_preview_configuration(
-                main={"size": (1280, 720), "format": "BGR888"}
-            )
-            p2.configure(config)
             try:
-                # Enable continuous autofocus for Pi Camera Module 3
+                config = p2.create_preview_configuration(
+                    main={"size": (1280, 720), "format": "BGR888"}
+                )
+                p2.configure(config)
+            except Exception:
+                config = p2.create_video_configuration(
+                    main={"size": (1280, 720), "format": "BGR888"}
+                )
+                p2.configure(config)
+                
+            try:
+                # Enable Continuous Autofocus (AfMode 2) for Pi Camera Module 3 IMX708 PDAF
                 p2.set_controls({"AfMode": 2})
             except Exception:
                 pass
+                
             p2.start()
-            time.sleep(0.5)
-            self.picam2 = p2
-            self.backend = "picam2"
-            print("[Camera] Pi Camera Module 3 opened via native Picamera2 (with continuous autofocus)! ✅")
-            return
-        except Exception as e:
-            print(f"[Camera] Picamera2 unavailable or failed ({e}), falling back to OpenCV VideoCapture...")
-
-        # 2. Try OpenCV VideoCapture (V4L2 or libcamerify)
-        try:
-            print(f"[Camera] Opening camera via OpenCV VideoCapture (index={self.camera_id})...")
-            cap = cv2.VideoCapture(self.camera_id)
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            if cap.isOpened():
-                self.cap = cap
-                self.backend = "opencv"
-                print(f"[Camera] Pi Camera opened successfully via OpenCV (index={self.camera_id})! ✅")
+            time.sleep(0.4)
+            
+            # Verify test capture
+            test_frame = p2.capture_array()
+            if test_frame is not None and test_frame.size > 0:
+                self.picam2 = p2
+                self.backend = "picam2"
+                self.consecutive_failures = 0
+                print("[Camera] Pi Camera Module 3 opened via native Picamera2 (with continuous autofocus)! ✅")
+                return
             else:
-                print("[Camera] ERROR: Could not open camera. If on Pi 5, launch with: libcamerify python3 app.py")
+                p2.stop()
+                p2.close()
         except Exception as e:
-            print(f"[Camera] OpenCV VideoCapture error: {e}")
+            print(f"[Camera] Picamera2 init notice: {e}, falling back to OpenCV...")
+
+        # 2. Try OpenCV VideoCapture with active frame validation
+        candidate_indices = [self.camera_id, 0, 1, 2, -1]
+        for cid in candidate_indices:
+            try:
+                print(f"[Camera] Testing OpenCV VideoCapture (index={cid})...")
+                cap = cv2.VideoCapture(cid)
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+                cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                if cap.isOpened():
+                    ret, test_frame = cap.read()
+                    if ret and test_frame is not None and test_frame.size > 0:
+                        self.cap = cap
+                        self.backend = "opencv"
+                        self.consecutive_failures = 0
+                        print(f"[Camera] Pi Camera opened successfully via OpenCV (index={cid})! ✅")
+                        return
+                    else:
+                        cap.release()
+            except Exception as e:
+                print(f"[Camera] OpenCV candidate {cid} error: {e}")
+
+        print("[Camera] WARNING: No active camera device detected or ready yet.")
+        self.backend = None
+        self.picam2 = None
+        self.cap = None
 
     def is_opened(self):
         if self.backend == "picam2" and self.picam2 is not None:
@@ -94,12 +123,24 @@ class PiCameraWrapper:
         if self.backend == "picam2" and self.picam2 is not None:
             try:
                 frame = self.picam2.capture_array()
-                return True, frame
+                if frame is not None and frame.size > 0:
+                    self.consecutive_failures = 0
+                    return True, frame
             except Exception as e:
                 print(f"[Camera] Picamera2 frame grab error: {e}")
-                return False, None
         elif self.backend == "opencv" and self.cap is not None:
-            return self.cap.read()
+            try:
+                ret, frame = self.cap.read()
+                if ret and frame is not None and frame.size > 0:
+                    self.consecutive_failures = 0
+                    return True, frame
+            except Exception as e:
+                print(f"[Camera] OpenCV frame grab error: {e}")
+                
+        self.consecutive_failures = getattr(self, "consecutive_failures", 0) + 1
+        if self.consecutive_failures >= 10:
+            print("[Camera] Consecutive failures exceeded threshold, resetting camera...")
+            self.release()
         return False, None
 
     def release(self):
@@ -117,6 +158,7 @@ class PiCameraWrapper:
                 pass
             self.cap = None
         self.backend = None
+        self.consecutive_failures = 0
 
 def get_camera(camera_id=None):
     global global_camera
@@ -1195,6 +1237,22 @@ def draw_inference_on_frame(frame, conf_val=0.15, imgsz_val=640, box_thickness=2
 
     return frame
 
+def make_status_frame(message="Connecting to Pi Camera Module 3..."):
+    """Generates an aesthetic Landbank-styled placeholder frame so the browser stream never breaks."""
+    import numpy as np
+    frame = np.full((720, 1280, 3), (25, 40, 20), dtype=np.uint8) # Landbank Deep Forest Green
+    # Header banner
+    cv2.rectangle(frame, (0, 0), (1280, 70), (0, 90, 54), -1) # Landbank Emerald Green
+    cv2.putText(frame, "RUBBER LEAF AI GUARD - LIVE VIEWFINDER", (40, 46), cv2.FONT_HERSHEY_SIMPLEX, 0.95, (255, 255, 255), 2, cv2.LINE_AA)
+    # Center Card
+    cv2.rectangle(frame, (180, 240), (1100, 480), (35, 55, 30), -1)
+    cv2.rectangle(frame, (180, 240), (1100, 480), (0, 90, 54), 2)
+    # Status Message
+    cv2.putText(frame, message, (220, 330), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (245, 166, 35), 2, cv2.LINE_AA) # Harvest Gold
+    cv2.putText(frame, "Checking hardware sensor (IMX708 PDAF / libcamera)...", (220, 385), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (200, 230, 215), 1, cv2.LINE_AA)
+    cv2.putText(frame, "Stream is active. Video will display automatically once frame is acquired.", (220, 430), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (160, 195, 180), 1, cv2.LINE_AA)
+    return frame
+
 pi_camera_fps = 0.0
 
 def gen_pi_camera_frames(live_detect=False, conf_val=0.15, box_thickness=2, hide_labels=False, camera_id=None, target_fps=30):
@@ -1203,19 +1261,28 @@ def gen_pi_camera_frames(live_detect=False, conf_val=0.15, box_thickness=2, hide
     
     fps_smooth = 0.0
     alpha = 0.1
+    last_placeholder_time = 0.0
     
     while True:
         loop_start = time.perf_counter()
         
         with camera_lock:
             cam = get_camera(camera_id)
-            if cam is None or not cam.isOpened():
-                time.sleep(0.1)
-                continue
-            success, frame = read_camera_frame()
+            if cam is not None and cam.isOpened():
+                success, frame = read_camera_frame()
+            else:
+                success, frame = False, None
             
         if not success or frame is None:
-            time.sleep(0.01)
+            now = time.perf_counter()
+            if now - last_placeholder_time >= 0.8:
+                last_placeholder_time = now
+                placeholder = make_status_frame("Connecting to Pi Camera Module 3...")
+                ret, buffer = cv2.imencode('.jpg', placeholder, [cv2.IMWRITE_JPEG_QUALITY, 80])
+                if ret:
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+            time.sleep(0.08)
             continue
             
         try:
@@ -1551,17 +1618,31 @@ def camera_snapshot():
         except ValueError:
             pass
 
-    with camera_lock:
-        cam = get_camera(camera_id)
-        if cam is None:
-            return jsonify({"error": "Physical camera not detected or busy on the Raspberry Pi."}), 400
-        success, frame = read_camera_frame()
-        if not success or frame is None:
-            return jsonify({"error": "Failed to grab frame from Pi camera."}), 500
-
     filename = f"snapshot_review_{uuid.uuid4().hex[:8]}.jpg"
     filepath = app.config['UPLOAD_FOLDER'] / filename
-    cv2.imwrite(str(filepath), frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    
+    frame = None
+    with camera_lock:
+        cam = get_camera(camera_id)
+        if cam is not None and cam.isOpened():
+            success, frame = read_camera_frame()
+            if success and frame is not None and frame.size > 0:
+                cv2.imwrite(str(filepath), frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+
+    # Fallback to rpicam-still CLI snapshot if direct capture did not produce an image
+    if not filepath.exists() or filepath.stat().st_size == 0:
+        import subprocess
+        for cli_cmd in ["rpicam-still", "libcamera-still"]:
+            try:
+                cmd = [cli_cmd, "-t", "800", "-o", str(filepath), "--width", "1920", "--height", "1080", "-n"]
+                subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=4)
+                if filepath.exists() and filepath.stat().st_size > 0:
+                    break
+            except Exception:
+                pass
+
+    if not filepath.exists() or filepath.stat().st_size == 0:
+        return jsonify({"error": "Failed to capture frame from Pi camera. Please verify camera ribbon cable connection."}), 500
 
     return jsonify({
         "success": True,

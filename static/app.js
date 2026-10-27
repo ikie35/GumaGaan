@@ -65,17 +65,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const statOther = document.getElementById("stat-count-other");
     const statTotal = document.getElementById("stat-count-total");
 
-    // Settings elements
-    const confThreshold = document.getElementById("confThreshold");
-    const confVal = document.getElementById("confVal");
-    if (confThreshold && confVal) {
-        confThreshold.addEventListener("input", (e) => {
-            confVal.textContent = parseFloat(e.target.value).toFixed(2);
-        });
-        confThreshold.addEventListener("change", () => {
-            updatePiCameraFeedSource();
-        });
-    }
+    // Calibrated model detection threshold
+    const DEFAULT_CONF = 0.15;
 
     let predictionData = null; // Store prediction results
 
@@ -628,7 +619,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!piCameraStream) return;
         isPiAutoDetecting = !isPiAutoDetecting;
         
-        const confVal = confThreshold ? parseFloat(confThreshold.value) : 0.15;
+        const confVal = DEFAULT_CONF;
         const thickness = boxThicknessSelect ? boxThicknessSelect.value : 2;
         const hideLabels = showLabelsCheckbox ? !showLabelsCheckbox.checked : false;
         
@@ -648,7 +639,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Function to reload the active Pi camera feed when configurations change
     function updatePiCameraFeedSource() {
         if (piCameraContainer && !piCameraContainer.classList.contains("hidden") && piCameraStream) {
-            const confVal = confThreshold ? parseFloat(confThreshold.value) : 0.15;
+            const confVal = DEFAULT_CONF;
             const thickness = boxThicknessSelect ? boxThicknessSelect.value : 2;
             const hideLabels = showLabelsCheckbox ? !showLabelsCheckbox.checked : false;
             piCameraStream.src = `/pi_video_feed?live_detect=${isPiAutoDetecting}&conf=${confVal}&box_thickness=${thickness}&hide_labels=${hideLabels}`;
@@ -811,7 +802,7 @@ document.addEventListener("DOMContentLoaded", () => {
             resultsPlaceholder.classList.remove("hidden");
             resultsContent.classList.add("hidden");
 
-            const confVal = confThreshold ? parseFloat(confThreshold.value) : 0.15;
+            const confVal = DEFAULT_CONF;
             const imgszSelect = document.getElementById("imgszSelect");
             const imgszVal = imgszSelect ? parseInt(imgszSelect.value) : 640;
 
