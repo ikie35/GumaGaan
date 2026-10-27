@@ -1498,6 +1498,195 @@ def predict_pi_camera():
         traceback.print_exc()
         return jsonify({"error": f"Error running models on Pi capture: {str(e)}"}), 500
 
+# ─────────────────────────────────────────────────────────────
+#  Dataset Refinement & In-Dashboard Image Collection Engine
+# ─────────────────────────────────────────────────────────────
+DATASET_BASE = Path(__file__).resolve().parent / "dataset_refinement"
+DATASET_STAGE1_LEAF = DATASET_BASE / "stage1_detector" / "leaf_samples"
+DATASET_STAGE1_BG   = DATASET_BASE / "stage1_detector" / "background_negatives"
+DATASET_STAGE2_HEALTHY = DATASET_BASE / "stage2_classifier" / "Healthy"
+DATASET_STAGE2_PLFD    = DATASET_BASE / "stage2_classifier" / "PLFD"
+DATASET_STAGE2_OTHER   = DATASET_BASE / "stage2_classifier" / "Other_Disease"
+DATASET_MANIFEST_CSV   = DATASET_BASE / "collection_manifest.csv"
+
+for _p in [DATASET_STAGE1_LEAF, DATASET_STAGE1_BG, DATASET_STAGE2_HEALTHY, DATASET_STAGE2_PLFD, DATASET_STAGE2_OTHER]:
+    _p.mkdir(parents=True, exist_ok=True)
+
+DATASET_LOCK = threading.Lock()
+
+def init_dataset_manifest():
+    with DATASET_LOCK:
+        if not DATASET_MANIFEST_CSV.exists() or DATASET_MANIFEST_CSV.stat().st_size == 0:
+            try:
+                with open(DATASET_MANIFEST_CSV, "w", encoding="utf-8") as f:
+                    f.write("Timestamp,Stage,Category,Filename,RelativePath,FileSizeBytes\n")
+            except Exception as e:
+                print(f"[DatasetRefinement] Init manifest error: {e}")
+
+init_dataset_manifest()
+
+def get_dataset_stats_internal():
+    valid_exts = {".jpg", ".jpeg", ".png", ".webp"}
+    try:
+        counts = {
+            "stage1_leaf": len([p for p in DATASET_STAGE1_LEAF.iterdir() if p.suffix.lower() in valid_exts]),
+            "stage1_bg": len([p for p in DATASET_STAGE1_BG.iterdir() if p.suffix.lower() in valid_exts]),
+            "stage2_healthy": len([p for p in DATASET_STAGE2_HEALTHY.iterdir() if p.suffix.lower() in valid_exts]),
+            "stage2_plfd": len([p for p in DATASET_STAGE2_PLFD.iterdir() if p.suffix.lower() in valid_exts]),
+            "stage2_other": len([p for p in DATASET_STAGE2_OTHER.iterdir() if p.suffix.lower() in valid_exts]),
+        }
+    except Exception as e:
+        print(f"[DatasetRefinement] Stats calculation error: {e}")
+        counts = {"stage1_leaf": 0, "stage1_bg": 0, "stage2_healthy": 0, "stage2_plfd": 0, "stage2_other": 0}
+    total = sum(counts.values())
+    return {"total": total, "categories": counts}
+
+@app.route('/api/camera/snapshot', methods=['POST'])
+def camera_snapshot():
+    """Takes a pristine high-resolution snapshot from the Pi camera without executing AI."""
+    camera_id = None
+    if 'camera_id' in request.form:
+        try:
+            camera_id = int(request.form['camera_id'])
+        except ValueError:
+            pass
+
+    with camera_lock:
+        cam = get_camera(camera_id)
+        if cam is None:
+            return jsonify({"error": "Physical camera not detected or busy on the Raspberry Pi."}), 400
+        success, frame = read_camera_frame()
+        if not success or frame is None:
+            return jsonify({"error": "Failed to grab frame from Pi camera."}), 500
+
+    filename = f"snapshot_review_{uuid.uuid4().hex[:8]}.jpg"
+    filepath = app.config['UPLOAD_FOLDER'] / filename
+    cv2.imwrite(str(filepath), frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+
+    return jsonify({
+        "success": True,
+        "image_url": f"/uploads/{filename}",
+        "temp_filename": filename
+    })
+
+@app.route('/api/dataset/save_sample', methods=['POST'])
+def save_dataset_sample():
+    """
+    Saves a snapshot or canvas upload into the chosen dataset refinement folder,
+    appends to the collection manifest CSV, and returns updated dataset counts.
+    """
+    category = request.form.get("category", "stage1_leaf")
+    temp_filename = request.form.get("temp_filename", "")
+    image_b64 = request.form.get("image_base64", "")
+    
+    category_map = {
+        "stage1_leaf": (DATASET_STAGE1_LEAF, "Stage1_Detector", "leaf_samples"),
+        "stage1_bg": (DATASET_STAGE1_BG, "Stage1_Detector", "background_negatives"),
+        "stage2_healthy": (DATASET_STAGE2_HEALTHY, "Stage2_Classifier", "Healthy"),
+        "stage2_plfd": (DATASET_STAGE2_PLFD, "Stage2_Classifier", "PLFD"),
+        "stage2_other": (DATASET_STAGE2_OTHER, "Stage2_Classifier", "Other_Disease"),
+        "Healthy": (DATASET_STAGE2_HEALTHY, "Stage2_Classifier", "Healthy"),
+        "PLFD": (DATASET_STAGE2_PLFD, "Stage2_Classifier", "PLFD"),
+        "Other_Disease": (DATASET_STAGE2_OTHER, "Stage2_Classifier", "Other_Disease")
+    }
+
+    if category not in category_map:
+        return jsonify({"error": f"Invalid category '{category}'"}), 400
+
+    target_dir, stage_label, cat_label = category_map[category]
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    dest_filename = f"{cat_label}_{timestamp_str}_{uuid.uuid4().hex[:6]}.jpg"
+    dest_path = target_dir / dest_filename
+
+    src_path = None
+    if temp_filename:
+        safe_name = secure_filename(temp_filename)
+        candidate = app.config['UPLOAD_FOLDER'] / safe_name
+        if candidate.exists():
+            src_path = candidate
+
+    if src_path and src_path.exists():
+        import shutil
+        shutil.copy2(str(src_path), str(dest_path))
+    elif image_b64:
+        import base64
+        try:
+            if "," in image_b64:
+                image_b64 = image_b64.split(",", 1)[1]
+            img_bytes = base64.b64decode(image_b64)
+            with open(dest_path, "wb") as f:
+                f.write(img_bytes)
+        except Exception as e:
+            return jsonify({"error": f"Failed to decode base64 image: {str(e)}"}), 400
+    elif 'file' in request.files:
+        f = request.files['file']
+        f.save(str(dest_path))
+    else:
+        return jsonify({"error": "No image data provided to save."}), 400
+
+    size_bytes = dest_path.stat().st_size if dest_path.exists() else 0
+    rel_path = dest_path.relative_to(DATASET_BASE).as_posix()
+    now_iso = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with DATASET_LOCK:
+        try:
+            with open(DATASET_MANIFEST_CSV, "a", encoding="utf-8") as f:
+                f.write(f'"{now_iso}","{stage_label}","{cat_label}","{dest_filename}","{rel_path}",{size_bytes}\n')
+        except Exception as e:
+            print(f"[DatasetRefinement] Manifest append error: {e}")
+
+    stats = get_dataset_stats_internal()
+    return jsonify({
+        "success": True,
+        "saved_path": rel_path,
+        "filename": dest_filename,
+        "category": cat_label,
+        "stats": stats
+    })
+
+@app.route('/api/dataset/discard_sample', methods=['POST'])
+def discard_dataset_sample():
+    """Deletes temporary review snapshot so disk stays clean."""
+    temp_filename = request.form.get("temp_filename", "")
+    if temp_filename:
+        safe_name = secure_filename(temp_filename)
+        candidate = app.config['UPLOAD_FOLDER'] / safe_name
+        if candidate.exists():
+            try:
+                candidate.unlink(missing_ok=True)
+            except Exception as e:
+                print(f"[Dataset] Error removing temp file: {e}")
+    return jsonify({"success": True, "status": "discarded"})
+
+@app.route('/api/dataset/stats', methods=['GET'])
+def get_dataset_stats_route():
+    return jsonify(get_dataset_stats_internal())
+
+@app.route('/api/dataset/download_zip', methods=['GET'])
+def download_dataset_zip():
+    """Zips the entire dataset_refinement directory and streams as downloadable ZIP."""
+    import zipfile
+    import io
+    
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for root, dirs, files in os.walk(DATASET_BASE):
+            for file in files:
+                abs_file = Path(root) / file
+                rel_file = abs_file.relative_to(DATASET_BASE.parent)
+                zf.write(abs_file, arcname=str(rel_file))
+                
+    zip_buffer.seek(0)
+    zip_name = f"rubber_leaf_refinement_dataset_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+    return send_file(
+        zip_buffer,
+        mimetype="application/zip",
+        as_attachment=True,
+        download_name=zip_name
+    )
+
 
 if __name__ == '__main__':
     import argparse

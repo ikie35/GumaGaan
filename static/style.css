@@ -1147,6 +1147,248 @@ body {
 }
 
 /* ==========================================================================
+/* ==========================================================================
+   Dataset Refinement Header Pill & ZIP Download Link
+   ========================================================================== */
+.dataset-zip-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.55rem;
+    background: var(--lbp-gold);
+    color: #ffffff;
+    border-radius: var(--radius-full);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    margin-left: 0.35rem;
+}
+
+.dataset-zip-link:hover {
+    background: var(--lbp-green);
+    transform: translateY(-1px);
+}
+
+.dataset-zip-link svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* ==========================================================================
+   In-Dashboard Refinement Review Deck (Capture -> Save or Discard)
+   ========================================================================== */
+.refinement-deck {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background: var(--surface-card);
+    border: 1.5px solid var(--lbp-green-border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    box-shadow: 0 4px 18px rgba(0, 90, 54, 0.08);
+    animation: fadeIn 0.25s ease-out;
+}
+
+.refinement-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 0.85rem;
+}
+
+.refinement-badge-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--lbp-gold);
+    background: var(--lbp-gold-tint);
+    border: 1px solid var(--lbp-gold-border);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    margin-bottom: 0.35rem;
+}
+
+.refinement-badge-tag svg {
+    width: 12px;
+    height: 12px;
+}
+
+.refinement-counter-badge {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--lbp-green);
+    background: var(--lbp-green-tint);
+    border: 1px solid var(--lbp-green-border);
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+}
+
+.refinement-preview-card {
+    position: relative;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: #0b1410;
+    border: 1px solid var(--border-medium);
+    max-height: 480px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.refinement-preview-card img {
+    max-width: 100%;
+    max-height: 480px;
+    object-fit: contain;
+    display: block;
+}
+
+.refinement-preview-meta {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(15, 36, 27, 0.85);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-sm);
+    padding: 3px 8px;
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.meta-dot {
+    color: var(--lbp-gold-bright);
+}
+
+.refinement-selector-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.refinement-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.category-chips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.5rem;
+}
+
+.refinement-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 0.85rem;
+    background: var(--surface-subtle);
+    border: 1.5px solid var(--border-medium);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: var(--font-sans);
+}
+
+.refinement-chip:hover {
+    background: var(--lbp-green-subtle);
+    border-color: var(--lbp-green);
+    transform: translateY(-1px);
+}
+
+.refinement-chip.active {
+    background: var(--lbp-green-tint);
+    border-color: var(--lbp-green);
+    box-shadow: 0 0 0 1px var(--lbp-green), 0 2px 8px rgba(0, 90, 54, 0.15);
+}
+
+.chip-emoji {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.chip-text-group {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.chip-heading {
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.chip-detail {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    line-height: 1.2;
+    margin-top: 2px;
+}
+
+.refinement-actions-bar {
+    display: flex;
+    gap: 0.65rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--border-light);
+    padding-top: 0.85rem;
+}
+
+.refinement-status-alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    background: var(--status-healthy-bg);
+    border: 1px solid var(--status-healthy-border);
+    border-left: 4px solid var(--status-healthy);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.refinement-status-alert .alert-icon {
+    width: 22px;
+    height: 22px;
+    color: var(--status-healthy);
+    flex-shrink: 0;
+}
+
+.refinement-status-alert .alert-text {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.refinement-status-alert strong {
+    font-size: 0.85rem;
+    color: var(--lbp-green-dark);
+}
+
+.refinement-status-alert span {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+/* ==========================================================================
    Smartphone & Mobile Responsive Tuning
    ========================================================================== */
 @media (max-width: 768px) {
@@ -1168,6 +1410,8 @@ body {
     .header-status-group {
         width: 100%;
         justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
 
     .card {
@@ -1180,6 +1424,18 @@ body {
     }
 
     .camera-actions-panel .btn {
+        width: 100%;
+    }
+
+    .category-chips-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .refinement-actions-bar {
+        flex-direction: column;
+    }
+
+    .refinement-actions-bar .btn {
         width: 100%;
     }
 

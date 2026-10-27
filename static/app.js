@@ -123,6 +123,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loadStats();
 
+    // Dataset Refinement Pool Stats Loader
+    async function loadDatasetStats() {
+        try {
+            const res = await fetch("/api/dataset/stats");
+            const data = await res.json();
+            const total = data.total || 0;
+            const datasetStatusText = document.getElementById("dataset-status-text");
+            if (datasetStatusText) {
+                datasetStatusText.textContent = `Pool: ${total} samples`;
+            }
+            return data;
+        } catch (e) {
+            console.error("Error loading dataset stats:", e);
+        }
+    }
+
+    loadDatasetStats();
+
     // --- GPS & FIELD GEOTAGGING SUBSYSTEM ---
     let currentClientCoords = null;
     let hardwareGpsLocked = false;
@@ -1103,6 +1121,249 @@ document.addEventListener("DOMContentLoaded", () => {
             uploadImage(file);
         }, "image/jpeg", 0.95);
     });
+
+    // =========================================================================
+    //  In-Dashboard Refinement Review Deck (Capture -> Save or Discard)
+    // =========================================================================
+    let currentReviewData = null; // { temp_filename, image_url, image_base64, source: 'pi'|'browser', blob: Blob }
+    let selectedRefinementCategory = "stage1_leaf";
+
+    const refinementDeck = document.getElementById("refinementDeck");
+    const refinementPreviewImg = document.getElementById("refinementPreviewImg");
+    const refinementChips = document.querySelectorAll(".refinement-chip");
+    const refinementCategoryCounter = document.getElementById("refinementCategoryCounter");
+    const capturePiReviewBtn = document.getElementById("capturePiReviewBtn");
+    const captureReviewBtn = document.getElementById("captureReviewBtn");
+    const saveRefinementBtn = document.getElementById("saveRefinementBtn");
+    const discardRefinementBtn = document.getElementById("discardRefinementBtn");
+    const diagnoseRefinementBtn = document.getElementById("diagnoseRefinementBtn");
+    const refinementNextShotBtn = document.getElementById("refinementNextShotBtn");
+    const refinementStatusAlert = document.getElementById("refinementStatusAlert");
+    const refinementAlertTitle = document.getElementById("refinementAlertTitle");
+    const refinementAlertDesc = document.getElementById("refinementAlertDesc");
+
+    // Category chips click handling
+    refinementChips.forEach(chip => {
+        chip.addEventListener("click", () => {
+            refinementChips.forEach(c => c.classList.remove("active"));
+            chip.classList.add("active");
+            selectedRefinementCategory = chip.dataset.category;
+            const heading = chip.querySelector(".chip-heading") ? chip.querySelector(".chip-heading").textContent : selectedRefinementCategory;
+            if (refinementCategoryCounter) {
+                refinementCategoryCounter.textContent = `Selected: ${heading}`;
+            }
+        });
+    });
+
+    function openRefinementDeck(imageUrl, metaLabel) {
+        // Hide active viewfinders & previous containers
+        if (piCameraContainer) piCameraContainer.classList.add("hidden");
+        if (cameraContainer) cameraContainer.classList.add("hidden");
+        if (dropzone) dropzone.classList.add("hidden");
+        if (cameraActionsPanel) cameraActionsPanel.classList.add("hidden");
+        if (previewContainer) previewContainer.classList.add("hidden");
+        
+        // Reset status alert
+        if (refinementStatusAlert) refinementStatusAlert.classList.add("hidden");
+        
+        if (refinementPreviewImg) refinementPreviewImg.src = imageUrl;
+        
+        const refinementMetaTime = document.getElementById("refinementMetaTime");
+        if (refinementMetaTime) {
+            const now = new Date();
+            refinementMetaTime.textContent = `${metaLabel} • ${now.toLocaleTimeString()}`;
+        }
+        
+        if (refinementDeck) refinementDeck.classList.remove("hidden");
+        lucide.createIcons();
+    }
+
+    function returnToLiveCamera() {
+        if (refinementDeck) refinementDeck.classList.add("hidden");
+        
+        if (currentReviewData && currentReviewData.source === "pi") {
+            startPiCamera();
+        } else if (currentReviewData && currentReviewData.source === "browser") {
+            startCamera();
+        } else {
+            if (dropzone) dropzone.classList.remove("hidden");
+            if (cameraActionsPanel) cameraActionsPanel.classList.remove("hidden");
+        }
+        currentReviewData = null;
+    }
+
+    // 1. Pi Camera Capture & Review
+    if (capturePiReviewBtn) {
+        capturePiReviewBtn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            const originalHtml = capturePiReviewBtn.innerHTML;
+            capturePiReviewBtn.disabled = true;
+            capturePiReviewBtn.innerHTML = `<i data-lucide="loader-2" style="animation: spin 1s linear infinite;"></i> Snapping...`;
+            lucide.createIcons();
+            
+            try {
+                const formData = new FormData();
+                const res = await fetch("/api/camera/snapshot", { method: "POST", body: formData });
+                const data = await res.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                currentReviewData = {
+                    temp_filename: data.temp_filename,
+                    image_url: data.image_url,
+                    source: "pi"
+                };
+                
+                openRefinementDeck(data.image_url, "Pi Camera IMX708 PDAF");
+            } catch (err) {
+                console.error("Pi Camera Snapshot error:", err);
+                alert("Error capturing snapshot from Pi camera.");
+            } finally {
+                capturePiReviewBtn.disabled = false;
+                capturePiReviewBtn.innerHTML = originalHtml;
+                lucide.createIcons();
+            }
+        });
+    }
+
+    // 2. Browser Camera Capture & Review
+    if (captureReviewBtn) {
+        captureReviewBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (!cameraStream) return;
+            
+            const canvas = document.createElement("canvas");
+            canvas.width = videoFeed.videoWidth || 1280;
+            canvas.height = videoFeed.videoHeight || 720;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(videoFeed, 0, 0, canvas.width, canvas.height);
+            
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+            canvas.toBlob((blob) => {
+                currentReviewData = {
+                    image_base64: dataUrl,
+                    image_url: dataUrl,
+                    blob: blob,
+                    source: "browser"
+                };
+                openRefinementDeck(dataUrl, "Browser Camera Frame");
+            }, "image/jpeg", 0.95);
+        });
+    }
+
+    // 3. Save Sample to Dataset Refinement Pool
+    if (saveRefinementBtn) {
+        saveRefinementBtn.addEventListener("click", async () => {
+            if (!currentReviewData) return;
+            
+            const originalHtml = saveRefinementBtn.innerHTML;
+            saveRefinementBtn.disabled = true;
+            saveRefinementBtn.innerHTML = `<i data-lucide="loader-2" style="animation: spin 1s linear infinite;"></i> Saving...`;
+            lucide.createIcons();
+            
+            try {
+                const formData = new FormData();
+                formData.append("category", selectedRefinementCategory);
+                if (currentReviewData.temp_filename) {
+                    formData.append("temp_filename", currentReviewData.temp_filename);
+                }
+                if (currentReviewData.image_base64) {
+                    formData.append("image_base64", currentReviewData.image_base64);
+                }
+                
+                const res = await fetch("/api/dataset/save_sample", {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                // Show confirmation toast
+                if (refinementAlertTitle) refinementAlertTitle.textContent = `Saved as ${data.category}!`;
+                if (refinementAlertDesc) {
+                    refinementAlertDesc.textContent = `Logged into manifest. Refinement Pool now contains ${data.stats.total} samples.`;
+                }
+                if (refinementStatusAlert) refinementStatusAlert.classList.remove("hidden");
+                
+                // Update header status pill
+                const datasetStatusText = document.getElementById("dataset-status-text");
+                if (datasetStatusText && data.stats) {
+                    datasetStatusText.textContent = `Pool: ${data.stats.total} samples`;
+                }
+                
+                lucide.createIcons();
+            } catch (err) {
+                console.error("Save sample error:", err);
+                alert("Error saving sample to dataset.");
+            } finally {
+                saveRefinementBtn.disabled = false;
+                saveRefinementBtn.innerHTML = originalHtml;
+                lucide.createIcons();
+            }
+        });
+    }
+
+    // 4. Discard Sample & Retake
+    if (discardRefinementBtn) {
+        discardRefinementBtn.addEventListener("click", async () => {
+            if (currentReviewData && currentReviewData.temp_filename) {
+                const formData = new FormData();
+                formData.append("temp_filename", currentReviewData.temp_filename);
+                fetch("/api/dataset/discard_sample", { method: "POST", body: formData }).catch(e => console.error(e));
+            }
+            returnToLiveCamera();
+        });
+    }
+
+    // 5. Next Shot Button
+    if (refinementNextShotBtn) {
+        refinementNextShotBtn.addEventListener("click", () => {
+            returnToLiveCamera();
+        });
+    }
+
+    // 6. Diagnose with AI from Refinement Deck
+    if (diagnoseRefinementBtn) {
+        diagnoseRefinementBtn.addEventListener("click", async () => {
+            if (!currentReviewData) return;
+            
+            const originalHtml = diagnoseRefinementBtn.innerHTML;
+            diagnoseRefinementBtn.disabled = true;
+            diagnoseRefinementBtn.innerHTML = `<i data-lucide="loader-2" style="animation: spin 1s linear infinite;"></i> Running AI...`;
+            lucide.createIcons();
+            
+            try {
+                // If it came from browser cam blob, create a File
+                let file = null;
+                if (currentReviewData.blob) {
+                    file = new File([currentReviewData.blob], "snapshot_diagnose.jpg", { type: "image/jpeg" });
+                    uploadImage(file);
+                } else if (currentReviewData.temp_filename) {
+                    // Fetch the temp file as a blob and submit to /predict
+                    const fetchRes = await fetch(currentReviewData.image_url);
+                    const blob = await fetchRes.blob();
+                    file = new File([blob], currentReviewData.temp_filename, { type: "image/jpeg" });
+                    uploadImage(file);
+                }
+            } catch (err) {
+                console.error("Diagnosis error:", err);
+            } finally {
+                diagnoseRefinementBtn.disabled = false;
+                diagnoseRefinementBtn.innerHTML = originalHtml;
+                lucide.createIcons();
+            }
+        });
+    }
 
     // --- UPLOAD HANDLERS ---
     dropzone.addEventListener("click", () => fileInput.click());

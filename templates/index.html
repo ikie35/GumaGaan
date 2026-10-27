@@ -34,6 +34,13 @@
                     <span class="status-indicator" id="system-status-indicator"></span>
                     <span id="system-status-text">Checking model weights...</span>
                 </div>
+                <div class="status-chip" id="dataset-status-pill" title="Collected samples for model refinement">
+                    <i data-lucide="archive" class="icon-accent"></i>
+                    <span id="dataset-status-text">Pool: 0 samples</span>
+                    <a href="/api/dataset/download_zip" class="dataset-zip-link" id="downloadDatasetZipBtn" title="Download refinement dataset as ZIP" download>
+                        <i data-lucide="download"></i> ZIP
+                    </a>
+                </div>
                 <div class="status-chip" id="gps-status-pill">
                     <i data-lucide="map-pin" id="gps-status-icon"></i>
                     <span id="gps-status-text">GPS: Initializing...</span>
@@ -106,8 +113,11 @@
                         <button type="button" class="btn btn-secondary" id="togglePiAutoDetectBtn">
                             <i data-lucide="play"></i> Auto-Detect
                         </button>
-                        <button type="button" class="btn btn-primary" id="capturePiBtn">
-                            <i data-lucide="aperture"></i> Capture Sample
+                        <button type="button" class="btn btn-primary" id="capturePiReviewBtn" title="Capture snapshot to inspect, categorize, and save or discard">
+                            <i data-lucide="camera"></i> Capture &amp; Review
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="capturePiBtn" title="Direct two-stage AI diagnosis">
+                            <i data-lucide="zap"></i> Instant AI
                         </button>
                         <button type="button" class="btn btn-outline-danger" id="stopPiCameraBtn">
                             Close Feed
@@ -139,11 +149,105 @@
                         <button type="button" class="btn btn-secondary" id="toggleLiveDetectBtn">
                             <i data-lucide="play"></i> Auto-Detect
                         </button>
-                        <button type="button" class="btn btn-primary" id="captureBtn">
-                            <i data-lucide="aperture"></i> Capture Leaf
+                        <button type="button" class="btn btn-primary" id="captureReviewBtn" title="Capture snapshot to inspect, categorize, and save or discard">
+                            <i data-lucide="camera"></i> Capture &amp; Review
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="captureBtn" title="Direct two-stage AI diagnosis">
+                            <i data-lucide="zap"></i> Instant AI
                         </button>
                         <button type="button" class="btn btn-outline-danger" id="stopCameraBtn">
                             Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- In-Dashboard Refinement Review Deck: Capture -> Save or Discard -->
+                <div class="refinement-deck hidden" id="refinementDeck">
+                    <div class="refinement-header">
+                        <div class="refinement-header-text">
+                            <div class="refinement-badge-tag">
+                                <i data-lucide="sparkles"></i> Model Refinement Collector
+                            </div>
+                            <h3>Review Snapshot</h3>
+                            <p class="section-subtext">Inspect the captured frame. Categorize and save it to the training pool, or discard and retake.</p>
+                        </div>
+                        <span class="refinement-counter-badge" id="refinementCategoryCounter">Selected: Leaf Sample</span>
+                    </div>
+
+                    <!-- Snapshot Display Frame -->
+                    <div class="refinement-preview-card">
+                        <img id="refinementPreviewImg" src="" alt="Snapshot for Dataset Refinement">
+                        <div class="refinement-preview-meta" id="refinementPreviewMeta">
+                            <span id="refinementMetaRes">1280 &times; 720</span>
+                            <span class="meta-dot">&bull;</span>
+                            <span id="refinementMetaTime">Just captured</span>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Category Selector -->
+                    <div class="refinement-selector-group">
+                        <label class="refinement-label">Choose Target Refinement Category:</label>
+                        <div class="category-chips-grid">
+                            <button type="button" class="refinement-chip active" data-category="stage1_leaf">
+                                <span class="chip-emoji">🌿</span>
+                                <div class="chip-text-group">
+                                    <strong class="chip-heading">Stage 1: Leaf Sample</strong>
+                                    <span class="chip-detail">Positive scene for detector</span>
+                                </div>
+                            </button>
+                            <button type="button" class="refinement-chip" data-category="stage1_bg">
+                                <span class="chip-emoji">🪵</span>
+                                <div class="chip-text-group">
+                                    <strong class="chip-heading">Stage 1: Background Neg</strong>
+                                    <span class="chip-detail">Suppress false-positives</span>
+                                </div>
+                            </button>
+                            <button type="button" class="refinement-chip" data-category="stage2_healthy">
+                                <span class="chip-emoji">🟢</span>
+                                <div class="chip-text-group">
+                                    <strong class="chip-heading">Stage 2: Healthy Leaf</strong>
+                                    <span class="chip-detail">Normal rubber foliage</span>
+                                </div>
+                            </button>
+                            <button type="button" class="refinement-chip" data-category="stage2_plfd">
+                                <span class="chip-emoji">🔴</span>
+                                <div class="chip-text-group">
+                                    <strong class="chip-heading">Stage 2: PLFD Fungal</strong>
+                                    <span class="chip-detail">Pestalotiopsis leaf fall</span>
+                                </div>
+                            </button>
+                            <button type="button" class="refinement-chip" data-category="stage2_other">
+                                <span class="chip-emoji">🟠</span>
+                                <div class="chip-text-group">
+                                    <strong class="chip-heading">Stage 2: Other Foliar</strong>
+                                    <span class="chip-detail">Anthracnose, Corynespora</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Action Toolbar: Save, Discard, or Run AI -->
+                    <div class="refinement-actions-bar">
+                        <button type="button" class="btn btn-outline-danger" id="discardRefinementBtn" title="Discard this image and return to camera viewfinder">
+                            <i data-lucide="trash-2"></i> Discard &amp; Retake
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="diagnoseRefinementBtn" title="Run 2-stage AI detection & diagnosis on this frame">
+                            <i data-lucide="cpu"></i> Run AI Diagnosis
+                        </button>
+                        <button type="button" class="btn btn-primary" id="saveRefinementBtn" title="Save this sample directly to the model refinement dataset">
+                            <i data-lucide="check-circle-2"></i> Save to Refinement Pool
+                        </button>
+                    </div>
+
+                    <!-- Confirmation Toast / Alert -->
+                    <div class="refinement-status-alert hidden" id="refinementStatusAlert">
+                        <i data-lucide="check-circle" class="alert-icon"></i>
+                        <div class="alert-text">
+                            <strong id="refinementAlertTitle">Sample Saved!</strong>
+                            <span id="refinementAlertDesc">Saved to dataset refinement pool.</span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary" id="refinementNextShotBtn">
+                            <i data-lucide="camera"></i> Take Another Shot
                         </button>
                     </div>
                 </div>
