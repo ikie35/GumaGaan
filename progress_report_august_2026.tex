@@ -1,0 +1,148 @@
+\documentclass[10pt,a4paper]{article}
+
+% --- Essential Academic Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx} % Professional Times New Roman
+\usepackage[margin=0.75in, top=0.8in, bottom=0.8in]{geometry}
+\usepackage{microtype}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+% --- Color Palette ---
+\definecolor{navyblue}{RGB}{16, 44, 87}
+\definecolor{darkgreen}{RGB}{20, 120, 40}
+\definecolor{darkgray}{RGB}{70, 70, 70}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=navyblue,
+    urlcolor=navyblue
+}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+
+% Tight bullet list for table cells
+\newlist{tableitems}{itemize}{1}
+\setlist[tableitems]{label=\raisebox{0.25ex}{\tiny$\bullet$}, leftmargin=*, itemsep=3pt, parsep=0pt, topsep=1pt, partopsep=0pt}
+
+\begin{document}
+
+% --- Header Section ---
+\begin{center}
+    {\Large\textbf{\textcolor{navyblue}{MONTHLY PROGRESS REPORT}}}\\[4pt]
+    {\large\textbf{For the Period of August 2026}}\\[6pt]
+    {\normalsize\textbf{Research Topic:} Two-Stage Deep Learning Pipeline for Rubber Leaf Disease Detection and Edge Deployment}
+\end{center}
+
+\vspace{0.2cm}
+\hrule height 0.75pt
+\vspace{0.35cm}
+
+% --- Metadata Block ---
+\noindent
+\begin{tabularx}{\textwidth}{@{}l X l r@{}}
+    \textbf{Student Name:} & Ike S. Russel & \textbf{Degree Program:} & MS Computer Applications \\
+    \textbf{Adviser:} & Prof. Orven E. Llantos, PhD & \textbf{Reporting Month:} & August 2026 \\
+\end{tabularx}
+
+\vspace{0.4cm}
+
+% --- Main Progress Table ---
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\textwidth}{@{} p{2.2cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X p{2.0cm} @{}}
+\toprule
+\textbf{No. of Week} & \textbf{Activity} & \textbf{Remarks} & \textbf{Status} \\
+\midrule
+
+\textbf{Week 1}\newline
+\footnotesize{(Aug 3 -- Aug 9)} & 
+\begin{tableitems}
+    \item Collected, curated, and organized raw rubber tree leaf field imagery across target disease categories into Roboflow workspace.
+    \item Performed bounding box annotations for Stage~1 rubber leaf localization, differentiating target canopies and foliage from background noise.
+    \item Curated, cropped, and labeled Stage~2 disease classification dataset (Powdery Mildew, Bird's Eye Spot, Colletotrichum, Pestalotiopsis, Healthy).
+    \item Configured dataset splitting (70\% Train, 20\% Val, 10\% Test) and established online stochastic data augmentation strategies.
+\end{tableitems} & 
+\begin{tableitems}
+    \item Established foundational image repository for multi-stage vision models.
+    \item Standardized annotation guidelines to minimize boundary ambiguity across leaf clusters.
+    \item Resolved class imbalance and verified disease symptom visibility per sample.
+    \item Ensured zero data leakage between splits for unbiased model evaluation.
+\end{tableitems} & 
+\textcolor{darkgreen}{\textbf{Completed}}\newline
+\footnotesize{100\%} \\
+
+\midrule
+
+\textbf{Week 2}\newline
+\footnotesize{(Aug 10 -- Aug 16)} & 
+\begin{tableitems}
+    \item \textbf{Hardware Acquisition:} Procured Raspberry Pi 5 (8GB), official active cooler \& protective casing, 27W (5V 5A) power adapter, Raspberry Pi Camera Module 3 (Wide), and Raspberry Pi AI HAT (Hailo-8L NPU).
+    \item Audited Stage~2 dataset for improper bounding box crops; verified dataset integrity prior to model training.
+    \item Prepared high-speed MicroSD storage, validated peripheral compatibility, and prepared edge installation guides.
+\end{tableitems} & 
+\begin{tableitems}
+    \item Acquired complete edge hardware inventory and dedicated power/cooling components.
+    \item Resolved dataset cropping irregularities to reduce classification noise.
+    \item Documented hardware specifications and planned edge installation environment.
+\end{tableitems} & 
+\textcolor{darkgreen}{\textbf{Completed}}\newline
+\footnotesize{100\%} \\
+
+\midrule
+
+\textbf{Week 3}\newline
+\footnotesize{(Aug 17 -- Aug 23)} & 
+\begin{tableitems}
+    \item Configured Kaggle GPU training pipelines with automated artifact packaging (\texttt{.pt}, \texttt{.onnx}, validation plots, CSV metrics).
+    \item Trained Stage~1 YOLO rubber leaf detector on single-class dataset for 100 epochs; monitored loss convergence and mAP50 / mAP50-95.
+    \item Trained Stage~2 disease classification models across cropped leaf categories (Powdery Mildew, Bird's Eye Spot, Colletotrichum, Pestalotiopsis, Healthy).
+\end{tableitems} & 
+\begin{tableitems}
+    \item Standardized automated metric logging and export workflow for reproducible runs.
+    \item Successfully eliminated class-0 background noise and improved canopy localization.
+    \item Achieved high classification accuracy across distinct leaf pathology classes.
+    \item Standardized test-set reporting metrics and eliminated validation set bias.
+\end{tableitems} & 
+\textcolor{darkgreen}{\textbf{Completed}}\newline
+\footnotesize{100\%} \\
+
+\midrule
+
+\textbf{Week 4}\newline
+\footnotesize{(Aug 24 -- Aug 31)} & 
+\begin{tableitems}
+    \item \textbf{Hardware Assembly:} Fitted active cooler onto Raspberry Pi 5, assembled board into protective casing, connected Camera Module 3 Wide to CSI port, and stacked the Raspberry Pi AI HAT via PCIe interface.
+\end{tableitems} & 
+\begin{tableitems}
+    \item Completed physical hardware assembly with proper thermal cooling and secure HAT seating.
+\end{tableitems} & 
+\textcolor{darkgreen}{\textbf{Completed}}\newline
+\footnotesize{100\%} \\
+
+\bottomrule
+\end{tabularx}
+
+\vspace{1.2cm}
+
+% --- Signatory Block ---
+\noindent
+\begin{minipage}[t]{0.45\textwidth}
+    \textbf{Prepared by:}\\[1.6cm]
+    \textbf{\underline{IKE S. RUSSEL}}\\[2pt]
+    Researcher / Graduate Student
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.45\textwidth}
+    \textbf{Endorsed by:}\\[1.6cm]
+    \textbf{\underline{PROF. ORVEN E. LLANTOS, PhD}}\\[2pt]
+    Thesis Adviser
+\end{minipage}
+
+\end{document}

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌿 2-Stage Rubber Leaf Disease Detector & Classifier</title>
+    <!-- Local Fonts -->
+    <link rel="stylesheet" href="/static/fonts/fonts.css">
+    <!-- Local Lucide Icons -->
+    <script src="/static/js/lucide.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Local Leaflet Map & Heatmap CSS -->
+    <link rel="stylesheet" href="/static/style-leaflet.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-area">
+                <div class="logo-icon">🌿</div>
+                <div>
+                    <h1>Rubber Leaf AI Guard</h1>
+                    <p class="subtitle">2-Stage Leaf Bounding Box Detector & Disease Classifier (YOLOv8)</p>
+                </div>
+            </div>
+            <div class="header-status" style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                    <span class="status-indicator" id="system-status-indicator"></span>
+                    <span id="system-status-text">Checking model weights...</span>
+                </div>
+                <span style="color: rgba(255,255,255,0.2);">|</span>
+                <div id="gps-status-pill" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; padding: 3px 8px; border-radius: 6px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: var(--text-secondary);">
+                    <i data-lucide="map-pin" id="gps-status-icon" style="width: 14px; height: 14px; color: #f59e0b;"></i>
+                    <span id="gps-status-text">GPS: Initializing...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard -->
+        <main class="dashboard-grid">
+            
+            <!-- Left Card: Upload & Detection Overlay -->
+            <section class="card glass upload-section">
+                <div class="card-header">
+                    <i data-lucide="upload-cloud" class="icon-accent"></i>
+                    <h2>Analyze Leaf Image</h2>
+                </div>
+                
+                <!-- Drag and drop zone -->
+                <div class="dropzone" id="dropzone">
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                    <div class="dropzone-content">
+                        <i data-lucide="image" class="dropzone-icon"></i>
+                        <p class="primary-text">Drag & drop your leaf image here</p>
+                        <p class="secondary-text">or <span class="browse-btn">browse files</span></p>
+                        <p class="file-limits">Supports JPG, PNG (Max 16MB)</p>
+                    </div>
+                </div>
+
+                <!-- Camera Action Buttons -->
+                <div class="camera-actions-panel" id="cameraActionsPanel" style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; margin-top: 1rem; width: 100%;">
+                    <label class="btn btn-primary" for="cameraInput" style="cursor: pointer; margin: 0; display: inline-flex; align-items: center; justify-content: center; flex: 1; min-width: 130px;">
+                        <i data-lucide="camera" style="margin-right: 0.5rem;"></i> Take Photo
+                    </label>
+                    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
+                    
+                    <button type="button" class="btn btn-secondary" id="startCameraBtn" style="margin: 0; display: inline-flex; align-items: center; justify-content: center; flex: 1; min-width: 130px;">
+                        <i data-lucide="video" style="margin-right: 0.5rem;"></i> Use Live Video
+                    </button>
+                    
+                    <button type="button" class="btn btn-secondary" id="startPiCameraBtn" style="margin: 0; display: inline-flex; align-items: center; justify-content: center; flex: 1; min-width: 130px; border-color: var(--accent-color);">
+                        <i data-lucide="cpu" style="margin-right: 0.5rem; color: var(--accent-color);"></i> Use Pi Camera
+                    </button>
+                </div>
+
+                <!-- Raspberry Pi Physical Camera Feed -->
+                <div class="camera-container hidden" id="piCameraContainer" style="margin-top: 1rem;">
+                    <div class="video-wrapper" id="piVideoWrapper" style="position: relative; overflow: hidden; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <img id="piCameraStream" src="" alt="Pi Camera Stream" style="width: 100%; max-height: 600px; display: block; background: #000; min-height: 360px; object-fit: contain;">
+                        <canvas id="piVideoCanvas" style="position: absolute; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%; z-index: 10;"></canvas>
+                        <!-- Floating HUD Overlay -->
+                        <div id="piCameraHud" style="position: absolute; top: 10px; right: 10px; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 4px 8px; font-family: monospace; font-size: 0.75rem; color: #10b981; z-index: 20; display: flex; align-items: center; gap: 0.35rem; font-weight: bold;">
+                            <span class="animate-pulse" style="width: 6px; height: 6px; background: #10b981; border-radius: 50%;"></span>
+                            <span>LIVE</span>
+                            <span style="color: rgba(255,255,255,0.4);">|</span>
+                            <span id="piCameraFpsText">-- FPS</span>
+                        </div>
+                    </div>
+                    <div class="camera-controls" style="margin-top: 0.75rem; display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-secondary" id="togglePiFullscreenBtn">
+                            <i data-lucide="maximize" style="margin-right: 0.5rem;"></i> Fullscreen
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="togglePiAutoDetectBtn">
+                            <i data-lucide="play" style="margin-right: 0.5rem;"></i> Start Auto-Detect
+                        </button>
+                        <button type="button" class="btn btn-primary" id="capturePiBtn">
+                            <i data-lucide="aperture" style="margin-right: 0.5rem;"></i> Capture from Pi
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="stopPiCameraBtn">
+                            Close Pi Feed
+                        </button>
+                    </div>
+                    
+                    <!-- Sensitivity Slider Bar -->
+                    <div class="stream-settings-bar" style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 0.5rem 0.85rem; flex-wrap: wrap; gap: 0.75rem; font-size: 0.8rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 220px;">
+                            <i data-lucide="sliders" style="width: 16px; height: 16px; color: var(--accent-color);"></i>
+                            <label for="confThreshold" style="white-space: nowrap; color: var(--text-secondary);">Leaf Sensitivity:</label>
+                            <input type="range" id="confThreshold" min="0.05" max="0.75" step="0.05" value="0.15" style="flex: 1; accent-color: var(--accent-color); cursor: pointer;">
+                            <span id="confVal" style="font-family: monospace; font-weight: bold; color: var(--accent-color); min-width: 38px;">0.15</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Camera Feed -->
+                <div class="camera-container hidden" id="cameraContainer">
+                    <div id="cameraErrorMsg" class="camera-error hidden"></div>
+                    <div class="video-wrapper" id="videoWrapper" style="position: relative;">
+                        <video id="videoFeed" autoplay playsinline></video>
+                        <canvas id="videoCanvas" style="position: absolute; top: 0; left: 0; pointer-events: none; width: 100%; height: 100%; z-index: 10;"></canvas>
+                    </div>
+                    <div class="camera-controls">
+                        <button type="button" class="btn btn-secondary" id="toggleFullscreenBtn">
+                            <i data-lucide="maximize"></i> Fullscreen
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="toggleLiveDetectBtn">
+                            <i data-lucide="play"></i> Start Auto-Detect
+                        </button>
+                        <button type="button" class="btn btn-primary" id="captureBtn">
+                            <i data-lucide="aperture"></i> Capture Leaf
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="stopCameraBtn">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Live Preview & Bounding Box Canvas -->
+                <div class="preview-container hidden" id="previewContainer">
+                    <div class="image-overlay-wrapper">
+                        <img id="imagePreview" src="" alt="Original Leaf" style="display: block;">
+                        <canvas id="bboxCanvas" style="position: absolute; top: 0; left: 0; pointer-events: none;"></canvas>
+                    </div>
+                    <button class="btn btn-secondary remove-btn" id="removeBtn">
+                        <i data-lucide="trash-2"></i> Remove image
+                    </button>
+                </div>
+            </section>
+
+            <!-- Right Card: Inference & Crops Results -->
+            <section class="card glass results-section">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i data-lucide="activity" class="icon-accent"></i>
+                        <h2>Analysis Report</h2>
+                    </div>
+                    <div class="report-actions-bar" style="display: flex; gap: 0.5rem;">
+                        <button type="button" class="btn btn-secondary" id="exportCsvBtn" title="Export session history to CSV" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem; margin: 0; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; cursor: pointer;">
+                            <i data-lucide="download" style="width: 14px; height: 14px;"></i> Export CSV
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="printReportBtn" title="Print current report" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem; margin: 0; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; cursor: pointer;">
+                            <i data-lucide="printer" style="width: 14px; height: 14px;"></i> Print
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="results-placeholder" id="resultsPlaceholder">
+                    <i data-lucide="scan-line" class="placeholder-icon animate-pulse"></i>
+                    <p>Upload an image or start Pi camera feed to trigger sequential 2-stage NPU inference.</p>
+                </div>
+
+                <div class="results-content hidden" id="resultsContent">
+                    <!-- Dynamic Summary Banner -->
+                    <div class="diagnosis-summary-banner" id="diagnosisSummaryBanner">
+                        <div class="summary-details">
+                            <span class="label">Detection Summary</span>
+                            <span class="value" id="summaryTotalText">0 Leaves Detected</span>
+                        </div>
+                        <div class="summary-stats-badges" id="summaryStatsBadges">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Real-Time Hardware Performance Telemetry -->
+                    <div class="telemetry-banner" id="telemetryBanner" style="display: flex; gap: 0.75rem; margin-top: 0.75rem; padding: 0.75rem 1rem; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 0.25rem; color: var(--accent-color); font-weight: 600; width: 100%; margin-bottom: 0.25rem;">
+                            <i data-lucide="gauge" style="width: 14px; height: 14px; color: var(--accent-color);"></i>
+                            <span style="color: var(--accent-color); font-weight: 600;">Edge Telemetry (Hailo-8L NPU)</span>
+                        </div>
+                        <div class="telemetry-item" style="flex: 1; min-width: 80px;">
+                            <span style="color: var(--text-secondary); display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">Stage 1 (Detect)</span>
+                            <strong id="telemetryDetText" style="color: var(--text-primary); font-size: 0.9rem;">-- ms</strong>
+                        </div>
+                        <div class="telemetry-item" style="flex: 1; min-width: 80px; border-left: 1px solid rgba(255,255,255,0.08); padding-left: 0.75rem;">
+                            <span style="color: var(--text-secondary); display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">Stage 2 (Classify)</span>
+                            <strong id="telemetryClsText" style="color: var(--text-primary); font-size: 0.9rem;">-- ms</strong>
+                        </div>
+                        <div class="telemetry-item" style="flex: 1; min-width: 80px; border-left: 1px solid rgba(255,255,255,0.08); padding-left: 0.75rem;">
+                            <span style="color: var(--text-secondary); display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">Total Latency</span>
+                            <strong id="telemetryTotalText" style="color: var(--healthy-color); font-size: 0.9rem;">-- ms</strong>
+                        </div>
+                        <div class="telemetry-item" style="flex: 1; min-width: 80px; border-left: 1px solid rgba(255,255,255,0.08); padding-left: 0.75rem;">
+                            <span style="color: var(--text-secondary); display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">Stream Rate</span>
+                            <strong id="telemetryFpsText" style="color: #38bdf8; font-size: 0.9rem;">-- FPS</strong>
+                        </div>
+                    </div>
+
+                    <!-- Geotagging & Field Location Banner -->
+                    <div class="location-banner hidden" id="reportLocationBanner" style="display: flex; gap: 0.75rem; margin-top: 0.75rem; padding: 0.65rem 1rem; border-radius: 8px; background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.2); font-size: 0.8rem; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="map-pin" style="width: 16px; height: 16px; color: #38bdf8;"></i>
+                            <div>
+                                <span style="color: var(--text-secondary); font-size: 0.7rem; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Field Coordinates</span>
+                                <strong id="reportLocationCoords" style="color: #f8fafc; font-family: monospace; font-size: 0.85rem;">--</strong>
+                                <span id="reportLocationSource" style="font-size: 0.7rem; color: #38bdf8; margin-left: 0.4rem; background: rgba(56, 189, 248, 0.15); padding: 1px 6px; border-radius: 4px;"></span>
+                            </div>
+                        </div>
+                        <a id="reportLocationMapLink" href="#" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 0.35rem; color: #38bdf8; font-size: 0.78rem; text-decoration: none; font-weight: 500; background: rgba(56, 189, 248, 0.1); padding: 0.35rem 0.65rem; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.25); transition: all 0.2s ease;">
+                            <span>View on Maps</span>
+                            <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
+                        </a>
+                    </div>
+
+                    <!-- Dynamic List of Leaf Diagnoses -->
+                    <div class="multi-results-container" id="multiResultsContainer">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Plantation Geospatial Heatmap Card -->
+        <section class="card glass map-section" style="margin-top: 1.5rem; width: 100%;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="map" class="icon-accent" style="color: #38bdf8;"></i>
+                    <div>
+                        <h2 style="font-size: 1.15rem; margin: 0;">Plantation Disease Surveillance & Hotspot Heatmap</h2>
+                        <p style="color: var(--text-secondary); font-size: 0.75rem; margin: 0.2rem 0 0 0;">
+                            Real-time geospatial tracking of Pestalotiopsis Leaf Fall Disease (PLFD) & foliar infections across plantation coordinates
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Map Layer Controls & Quick Stats -->
+                <div class="map-controls-bar" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <div class="map-stat-badges" style="display: flex; gap: 0.35rem;">
+                        <span class="badge plfd" id="mapStatPlfd">0 PLFD Hotspots</span>
+                        <span class="badge warning" id="mapStatOther" style="background-color: #f59e0b; color: #1e293b;">0 Other</span>
+                        <span class="badge healthy" id="mapStatHealthy">0 Healthy</span>
+                    </div>
+                    
+                    <div style="display: flex; gap: 0.35rem;">
+                        <button type="button" class="btn btn-secondary active" id="toggleHeatmapBtn" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem; background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4);">
+                            <i data-lucide="flame" style="width: 14px; height: 14px; color: #ef4444;"></i> Heatmap
+                        </button>
+                        <button type="button" class="btn btn-secondary active" id="togglePinsBtn" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem; background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.4);">
+                            <i data-lucide="map-pin" style="width: 14px; height: 14px; color: #38bdf8;"></i> Pins
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="recenterMapBtn" title="Center on Current GPS" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                            <i data-lucide="crosshair" style="width: 14px; height: 14px;"></i> Center GPS
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="clearMapBtn" title="Clear Map Markers" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="position: relative; width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.08); margin-top: 0.75rem;">
+                <div id="plantationMap" style="width: 100%; height: 420px; background: #0f172a; border-radius: 8px; z-index: 1;"></div>
+                
+                <!-- Offline Fallback Banner on Map -->
+                <div id="mapOfflineNotice" style="position: absolute; bottom: 8px; left: 8px; z-index: 999; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 4px 8px; font-size: 0.7rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem;">
+                    <i data-lucide="satellite" style="width: 12px; height: 12px; color: #38bdf8;"></i>
+                    <span>Offline Vector Grid (Tiles stream when online)</span>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Initialize icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+    <!-- Leaflet & Heatmap Engine -->
+    <script src="/static/js/leaflet.js"></script>
+    <script src="/static/js/leaflet-heat.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>

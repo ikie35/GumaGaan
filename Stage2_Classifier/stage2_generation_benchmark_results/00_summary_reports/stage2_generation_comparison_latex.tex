@@ -1,0 +1,17 @@
+\begin{table}[htbp]
+\centering
+\caption{Stage 2 Rubber Leaf Disease Classifier: Cross-Generation Benchmark (Test Split)}
+\label{tab:stage2_generation_benchmark}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccccc}
+\toprule
+\textbf{Generation} & \textbf{Params (M)} & \textbf{.pt (MB)} & \textbf{.onnx (MB)}
+  & \textbf{Accuracy} & \textbf{Macro F1} & \textbf{Wtd F1} & \textbf{Latency (ms)} \\
+\midrule
+yolov8n-cls & 1.44 & 2.83 & 5.52 & 94.59\% & 93.99\% & 94.50\% & 2.51 \\
+yolo11n-cls & 1.53 & 3.04 & 5.88 & 94.24\% & 93.65\% & 94.24\% & 4.13 \\
+yolo26n-cls & 1.53 & 3.04 & 5.88 & 94.24\% & 93.70\% & 94.23\% & 3.90 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

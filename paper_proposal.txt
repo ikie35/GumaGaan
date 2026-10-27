@@ -1,0 +1,148 @@
+================================================================================
+PAPER BLUEPRINT: A SCALE-INVARIANT TWO-STAGE DEEP LEARNING PIPELINE WITH
+QUALITY-GATED LEAF FILTERING FOR REAL-TIME RUBBER LEAF DISEASE DIAGNOSIS
+================================================================================
+
+--------------------------------------------------------------------------------
+1. ABSTRACT
+--------------------------------------------------------------------------------
+Pestalotiopsis Leaf Fall Disease (PLFD) and related foliar pathogens pose severe 
+threats to natural rubber (Hevea brasiliensis) production. Traditional deep 
+learning approaches suffer from severe error propagation when out-of-focus 
+background foliage, tiny noise instances, or occluded leaves are passed to 
+downstream classification networks. 
+
+In this work, we present a lightweight, two-stage computer vision pipeline 
+designed for real-time, field-deployable rubber leaf disease diagnosis.
+
+Stage 1 employs a YOLOv8 object detector trained with a novel Dual-Class Quality 
+Gatekeeping strategy ('Ignore Leaf' vs. 'Rubber Leaf') alongside multi-scale 
+jittering (320px to 960px). At a calibrated confidence threshold of conf=0.40, 
+Stage 1 achieves a 96.27% mAP@50, 84.65% mAP@50-95, and 91.36% Recall on held-out 
+test data.
+
+Stage 2 utilizes a YOLOv8-cls classifier trained on a bounding-box padded dataset 
+(v4), attaining 94.94% Test Accuracy and 94.52% Macro F1-Score across Healthy 
+(97.25% F1), PLFD (95.11% F1), and Other Diseases (91.20% F1).
+
+To eliminate live video prediction flickering, we integrate a Centroid Tracker 
+with a 9-frame Rolling Majority-Voting Filter alongside a WebRTC web interface. 
+The integrated system bounds per-frame classification to N <= 10 crops, offering 
+a stable, real-time diagnostic framework for mobile agricultural monitoring.
+
+
+--------------------------------------------------------------------------------
+2. CORE RESEARCH CONTRIBUTIONS
+--------------------------------------------------------------------------------
+Pillar 1: Quality Gatekeeping Strategy
+- Dual-Class Bounding Box ('Ignore Leaf' vs 'Rubber Leaf')
+- Annotating 4,069 'Ignore Leaf' instances explicitly filters out out-of-focus 
+  and background foliage, suppressing Out-Of-Distribution (OOD) noise before 
+  Stage 2 classification.
+- Source Reference: manuscript_notes.md
+
+Pillar 2: Spatial Context Refinement
+- v4 Dataset Bounding Box Padding
+- Adding spatial margins around bounding box crops increased Macro F1-Score 
+  from 87.45% to 94.52% (Healthy F1 rose from 73.68% to 97.25%).
+- Source Reference: Stage2_Classifier/Training Result on v4 dataset/classification_report.txt
+
+Pillar 3: Live Stream Stabilization Engine
+- Centroid Tracker + 9-Frame Majority Vote
+- Tracking spatial centroids (D < 120px) across continuous camera frames 
+  eliminates high-frequency diagnostic flickering under field conditions.
+- Source Reference: app.py
+
+Pillar 4: Deployment Engineering & Edge Web UI
+- DOM Teleportation & Event Isolation
+- Solved mobile web edge cases: CSS backdrop-filter z-index isolation via 
+  DOM Teleportation, and touch-screen button event bubbling isolation.
+- Source Reference: CRISP_DM_Iterations.md
+
+
+--------------------------------------------------------------------------------
+3. QUANTITATIVE EXPERIMENTAL RESULTS
+--------------------------------------------------------------------------------
+A. Stage 1: Leaf Detector Performance (100 Epochs, conf=0.40)
+- Dataset: 6,145 instances across 1,179 images (Ignore Leaf = 4,069, Rubber Leaf = 2,076)
+- Augmentations: Scale jitter (scale=0.7), dynamic multi-scale (320px - 960px), degrees=15.0, flipud=0.5
+- Threshold Calibration: Raising threshold from 0.25 to 0.40 eliminated ~80% of outdoor background false positives.
+
+Metric Summary:
+- mAP@50:        96.27%  (Near-perfect leaf localization at IoU 0.50 threshold)
+- mAP@50-95:     84.65%  (High precision bounding-box overlap accuracy)
+- Precision (P): 90.64%  (Low false positive rate on outdoor background structures)
+- Recall (R):    91.36%  (High detection sensitivity under variable field distances)
+- F1-Score:      91.00%  (Optimal harmonic balance)
+
+
+B. Stage 2: Disease Classifier Performance (v4 Padded Dataset)
+
+Overall Multi-Split Performance:
+- Validation Split (N = 1,146): Accuracy = 95.8115% | Macro F1-Score = 95.5493%
+- Test Split       (N = 573):   Accuracy = 94.9389% | Macro F1-Score = 94.5218%
+
+Per-Class Detailed Metrics (Held-Out Test Split):
+------------------------------------------------------------------
+Category        Precision     Recall        F1-Score      Support (N)
+------------------------------------------------------------------
+Healthy         96.72%        97.79%        97.25%        181
+PLFD            94.40%        95.83%        95.11%        264
+Other Disease   93.44%        89.06%        91.20%        128
+------------------------------------------------------------------
+Overall Macro   94.86%        94.23%        94.52%        573
+------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+4. END-TO-END SYSTEM PIPELINE & COMPUTATIONAL BOUND
+--------------------------------------------------------------------------------
+Pipeline Flow:
+Input Frame -> Stage 1 Leaf Detector (YOLOv8) -> Filter (conf >= 0.40 & Rubber Leaf) 
+-> Quality Gatekeeper (Discard Ignore Leaf) -> Crop + Bounding Box Padding 
+-> Stage 2 Classifier (YOLOv8-cls) -> Centroid Tracker (D < 120px) 
+-> 9-Frame Majority Vote Filter -> WebRTC Diagnostic Output
+
+Computational Latency Bound Equation:
+Total Latency = T_detector + min(N, 10) * T_classifier
+
+
+--------------------------------------------------------------------------------
+5. PROPOSED MANUSCRIPT SECTION OUTLINE
+--------------------------------------------------------------------------------
+1. INTRODUCTION
+   1.1 Agricultural Background: Economic Significance of Natural Rubber & PLFD
+   1.2 Problem Statement: Error Propagation & Scale Variance in Canopy Leaf Diagnosis
+   1.3 Summary of Research Contributions
+
+2. MATERIALS AND METHODS
+   2.1 Dataset Collection and Dual-Class Quality Gatekeeper Annotation Strategy
+   2.2 Stage 1 Leaf Detection Calibration & Scale Augmentation Strategy
+   2.3 Stage 2 Classifier Refinement (Bounding-Box Padding & Noise Filtering)
+   2.4 Temporal Majority-Voting & Centroid Tracking Engine
+   2.5 Integrated Two-Stage Architecture & WebRTC Deployment Engineering
+
+3. EXPERIMENTAL RESULTS AND EVALUATION
+   3.1 Stage 1 Held-Out Test Evaluation (mAP, Precision, Recall)
+   3.2 Stage 2 Multi-Split Quantitative Metrics (Validation vs Test Breakdown)
+   3.3 Comparative Ablation Study: Impact of Dataset Bounding-Box Margin Refinement
+   3.4 Field Video Stabilization Benchmarks & Browser Performance Analysis
+
+4. DISCUSSION
+   4.1 Mitigation of Out-of-Distribution (OOD) Noise via Quality Gatekeeping
+   4.2 Computational Latency Bounding for Continuous Real-Time Edge Processing
+   4.3 Mobile Browser Deployment Challenges (WebRTC Secure Origins, DOM Teleportation)
+
+5. CONCLUSION AND FUTURE WORK
+
+
+--------------------------------------------------------------------------------
+6. SOURCE CODE & FILE MAPPING
+--------------------------------------------------------------------------------
+- Stage 1 Detector Results: Stage 1 Rubber Leaf Detector/stage1_training_results
+- Stage 2 Classifier Report: Stage2_Classifier/Training Result on v4 dataset/classification_report.txt
+- Two-Stage Inference Engine: inference_two_stage.py
+- Live Video App & Tracking: app.py
+- Methodology & Justifications: manuscript_notes.md
+- CRISP-DM Process Logs: CRISP_DM_Iterations.md
+================================================================================

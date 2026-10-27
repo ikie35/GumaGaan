@@ -1,0 +1,156 @@
+\documentclass[11pt,a4paper,landscape]{article}
+\usepackage[margin=0.45in,top=0.45in,bottom=0.45in]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{array}
+\usepackage{booktabs}
+
+% --- High-Impact Publication Color Palette ---
+\definecolor{navyheader}{RGB}{20, 45, 85}       % Deep Navy for Primary Headers
+\definecolor{subnavy}{RGB}{35, 70, 120}         % Subheader Navy for Months
+\definecolor{phasebg}{RGB}{232, 240, 250}       % Soft Blue-Gray for Phase Headers
+\definecolor{ganttblue}{RGB}{24, 115, 204}      % Vibrant Royal Blue for Active Tasks
+\definecolor{rowalt}{RGB}{250, 252, 255}        % Ultra-subtle alternating row
+\definecolor{bordergray}{RGB}{185, 198, 215}    % Crisp border color
+
+% Fixed column width for compact month grid (fills landscape width perfectly)
+\newcolumntype{M}{>{\centering\arraybackslash}p{0.88cm}}
+
+\begin{document}
+\pagestyle{empty}
+
+\begin{table}[htbp]
+\centering
+\renewcommand{\arraystretch}{1.30}
+\setlength{\tabcolsep}{0pt}
+
+% Colored table borders
+\arrayrulecolor{bordergray}
+
+\begin{tabular}{|p{8.4cm}|*{3}{M|}|*{12}{M|}|*{5}{M|}}
+\hline
+% Year Super-Header
+\rowcolor{navyheader}
+\multicolumn{1}{|c|}{\color{white}\bfseries Activity / Milestone} & 
+\multicolumn{3}{c||}{\color{white}\bfseries 2025} & 
+\multicolumn{12}{c||}{\color{white}\bfseries 2026} & 
+\multicolumn{5}{c|}{\color{white}\bfseries 2027} \\
+\hline
+% Month Sub-Header
+\rowcolor{subnavy}
+\multicolumn{1}{|c|}{\color{white}\footnotesize\bfseries Work Breakdown Structure} & 
+\color{white}\footnotesize\bfseries Oct & \color{white}\footnotesize\bfseries Nov & \color{white}\footnotesize\bfseries Dec & 
+\color{white}\footnotesize\bfseries Jan & \color{white}\footnotesize\bfseries Feb & \color{white}\footnotesize\bfseries Mar & \color{white}\footnotesize\bfseries Apr & \color{white}\footnotesize\bfseries May & \color{white}\footnotesize\bfseries Jun & \color{white}\footnotesize\bfseries Jul & \color{white}\footnotesize\bfseries Aug & \color{white}\footnotesize\bfseries Sep & \color{white}\footnotesize\bfseries Oct & \color{white}\footnotesize\bfseries Nov & \color{white}\footnotesize\bfseries Dec & 
+\color{white}\footnotesize\bfseries Jan & \color{white}\footnotesize\bfseries Feb & \color{white}\footnotesize\bfseries Mar & \color{white}\footnotesize\bfseries Apr & \color{white}\footnotesize\bfseries May \\
+\hline
+
+% --------------------------------------------------------------------------
+% PHASE I
+% --------------------------------------------------------------------------
+\rowcolor{phasebg}
+\multicolumn{21}{|l|}{\bfseries \quad Phase I: Inception, Design \& Regulatory Compliance} \\
+\hline
+\quad 1. Thesis proposal 
+& \cellcolor{ganttblue} & \cellcolor{ganttblue} & \cellcolor{ganttblue}
+& & & & & & & & & & & & & & & & & \\
+\hline
+\rowcolor{rowalt}
+\quad 2. RICO (Research Ethics/Compliance) 
+& & & 
+& \cellcolor{ganttblue} & \cellcolor{ganttblue} & \cellcolor{ganttblue} & \cellcolor{ganttblue} & \cellcolor{ganttblue} & & & & & & & & & & & & \\
+\hline
+\quad 3. Canvassing and Budgeting 
+& & & 
+& \cellcolor{ganttblue} & \cellcolor{ganttblue} & \cellcolor{ganttblue} & \cellcolor{ganttblue} & \cellcolor{ganttblue} & & & & & & & & & & & & \\
+\hline
+\rowcolor{rowalt}
+\quad 4. System Designing 
+& & & 
+& \cellcolor{ganttblue} & \cellcolor{ganttblue} & \cellcolor{ganttblue} & \cellcolor{ganttblue} & \cellcolor{ganttblue} & & & & & & & & & & & & \\
+\hline
+
+% --------------------------------------------------------------------------
+% PHASE II
+% --------------------------------------------------------------------------
+\rowcolor{phasebg}
+\multicolumn{21}{|l|}{\bfseries \quad Phase II: Dataset Preparation \& Hardware Setup} \\
+\hline
+\quad 5. Preliminary survey 
+& & & 
+& & & & & & \cellcolor{ganttblue} & \cellcolor{ganttblue} & & & & & & & & & & \\
+\hline
+\rowcolor{rowalt}
+\quad 6. Dataset Collection \& Processing 
+& & & 
+& & & & & & \cellcolor{ganttblue} & \cellcolor{ganttblue} & \cellcolor{ganttblue} & & & & & & & & & \\
+\hline
+\quad 7. Procurement 
+& & & 
+& & & & & & & & \cellcolor{ganttblue} & & & & & & & & & \\
+\hline
+\rowcolor{rowalt}
+\quad 8. Hardware Fabrication 
+& & & 
+& & & & & & & & \cellcolor{ganttblue} & \cellcolor{ganttblue} & & & & & & & & \\
+\hline
+
+% --------------------------------------------------------------------------
+% PHASE III
+% --------------------------------------------------------------------------
+\rowcolor{phasebg}
+\multicolumn{21}{|l|}{\bfseries \quad Phase III: Computational Development \& Optimization} \\
+\hline
+\quad 9. Model Training \& Optimization 
+& & & 
+& & & & & & & & \cellcolor{ganttblue} & \cellcolor{ganttblue} & & & & & & & & \\
+\hline
+\rowcolor{rowalt}
+\quad 10. Dashboard Development 
+& & & 
+& & & & & & & & & \cellcolor{ganttblue} & \cellcolor{ganttblue} & & & & & & & \\
+\hline
+\quad 11. System Development 
+& & & 
+& & & & & & & & & \cellcolor{ganttblue} & \cellcolor{ganttblue} & & & & & & & \\
+\hline
+\rowcolor{rowalt}
+\quad 12. Hardware Stability Testing 
+& & & 
+& & & & & & & & & & \cellcolor{ganttblue} & \cellcolor{ganttblue} & & & & & & \\
+\hline
+
+% --------------------------------------------------------------------------
+% PHASE IV
+% --------------------------------------------------------------------------
+\rowcolor{phasebg}
+\multicolumn{21}{|l|}{\bfseries \quad Phase IV: Field Deployment \& Quality Assessment} \\
+\hline
+\quad 13. System Deployment 
+& & & 
+& & & & & & & & & & & \cellcolor{ganttblue} & \cellcolor{ganttblue} & & & & & \\
+\hline
+\rowcolor{rowalt}
+\quad 14. System Evaluation 
+& & & 
+& & & & & & & & & & & & \cellcolor{ganttblue} & \cellcolor{ganttblue} & & & & \\
+\hline
+
+% --------------------------------------------------------------------------
+% PHASE V
+% --------------------------------------------------------------------------
+\rowcolor{phasebg}
+\multicolumn{21}{|l|}{\bfseries \quad Phase V: Thesis Writing, Defense \& Submission} \\
+\hline
+\quad 15. Thesis Manuscript Writing 
+& & & 
+& & & & & & & & & & \cellcolor{ganttblue} & \cellcolor{ganttblue} & \cellcolor{ganttblue} & \cellcolor{ganttblue} & \cellcolor{ganttblue} & \cellcolor{ganttblue} & & \\
+\hline
+\rowcolor{rowalt}
+\quad 16. Final Defense \& Submission 
+& & & 
+& & & & & & & & & & & & & & & & \cellcolor{ganttblue} & \cellcolor{ganttblue} \\
+\hline
+
+\end{tabular}
+\end{table}
+
+\end{document}

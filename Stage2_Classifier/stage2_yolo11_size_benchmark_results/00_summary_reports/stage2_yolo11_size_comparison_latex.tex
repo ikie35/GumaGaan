@@ -1,0 +1,16 @@
+\begin{table}[htbp]
+\centering
+\caption{Stage 2 YOLO11-cls Scale Comparison: Rubber Leaf Disease Classification (Test Split)}
+\label{tab:stage2_yolo11_size}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccccc}
+\toprule
+\textbf{Scale} & \textbf{Model} & \textbf{Params (M)} & \textbf{.pt (MB)} & \textbf{.onnx (MB)} & \textbf{Accuracy} & \textbf{Macro F1} & \textbf{Wtd F1} & \textbf{Latency (ms)} \\\
+\midrule
+Nano & yolo11n-cls & 1.53 & 3.04 & 5.88 & 94.24\% & 93.65\% & 94.24\% & 3.53 \\\
+Small & yolo11s-cls & 5.45 & 10.52 & 20.79 & 93.72\% & 93.22\% & 93.71\% & 3.92 \\\
+Medium & yolo11m-cls & 10.36 & 19.92 & 39.52 & 94.42\% & 93.96\% & 94.39\% & 4.91 \\\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

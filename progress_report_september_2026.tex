@@ -1,0 +1,141 @@
+\documentclass[10pt,a4paper]{article}
+
+% --- Essential Academic Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx} % Professional Times New Roman
+\usepackage[margin=0.75in, top=0.8in, bottom=0.8in]{geometry}
+\usepackage{microtype}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+% --- Color Palette ---
+\definecolor{navyblue}{RGB}{16, 44, 87}
+\definecolor{darkgreen}{RGB}{20, 120, 40}
+\definecolor{darkgray}{RGB}{70, 70, 70}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=navyblue,
+    urlcolor=navyblue
+}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+
+% Tight bullet list for table cells
+\newlist{tableitems}{itemize}{1}
+\setlist[tableitems]{label=\raisebox{0.25ex}{\tiny$\bullet$}, leftmargin=*, itemsep=3pt, parsep=0pt, topsep=1pt, partopsep=0pt}
+
+\begin{document}
+
+% --- Header Section ---
+\begin{center}
+    {\Large\textbf{\textcolor{navyblue}{MONTHLY PROGRESS REPORT}}}\\[4pt]
+    {\large\textbf{For the Period of September 2026}}\\[6pt]
+    {\normalsize\textbf{Research Topic:} Two-Stage Deep Learning Pipeline for Rubber Leaf Disease Detection and Edge Deployment}
+\end{center}
+
+\vspace{0.2cm}
+\hrule height 0.75pt
+\vspace{0.35cm}
+
+% --- Metadata Block ---
+\noindent
+\begin{tabularx}{\textwidth}{@{}l X l r@{}}
+    \textbf{Student Name:} & Ike S. Russel & \textbf{Degree Program:} & MS Computer Applications \\
+    \textbf{Adviser:} & Prof. Orven E. Llantos, PhD & \textbf{Reporting Month:} & September 2026 \\
+\end{tabularx}
+
+\vspace{0.4cm}
+
+% --- Main Progress Table ---
+\renewcommand{\arraystretch}{1.4}
+\begin{tabularx}{\textwidth}{@{} p{2.2cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X p{2.0cm} @{}}
+\toprule
+\textbf{No. of Week} & \textbf{Activity} & \textbf{Remarks} & \textbf{Status} \\
+\midrule
+
+\textbf{Week 1}\newline
+\footnotesize{(Sep 1 -- Sep 7)} & 
+\begin{tableitems}
+    \item \textbf{Hardware Fabrication (Driver Setup):} Flashed 64-bit Raspberry Pi OS, configured PCIe Gen~3 interface, and installed HailoRT runtime drivers for the AI HAT.
+    \item \textbf{Camera Initialization:} Connected and tested Raspberry Pi Camera Module 3 Wide with \texttt{libcamera} / \texttt{Picamera2} for basic image capture.
+\end{tableitems} & 
+\begin{tableitems}
+    \item Verified proper hardware detection of Hailo-8L NPU over PCIe bus.
+    \item Confirmed camera video stream feed functionality without hardware conflicts.
+\end{tableitems} & 
+\textcolor{darkgreen}{\textbf{Completed}}\newline
+\footnotesize{100\%} \\
+
+\midrule
+
+\textbf{Week 2}\newline
+\footnotesize{(Sep 8 -- Sep 14)} & 
+\begin{tableitems}
+    \item \textbf{Model Training \& Optimization:} Refined Stage~1 detector to single-class \texttt{Rubber Leaf} model and calibrated confidence threshold to \texttt{conf=0.40} to reduce background false alarms.
+    \item \textbf{Model Compilation:} Converted trained models to ONNX and compiled baseline weights into Hailo Executable Format (\texttt{.hef}).
+\end{tableitems} & 
+\begin{tableitems}
+    \item Improved leaf boundary detection and filtered out non-leaf background noise.
+    \item Generated edge-ready compiled models for the Hailo-8L NPU.
+\end{tableitems} & 
+\textcolor{darkgreen}{\textbf{Completed}}\newline
+\footnotesize{100\%} \\
+
+\midrule
+
+\textbf{Week 3}\newline
+\footnotesize{(Sep 15 -- Sep 21)} & 
+\begin{tableitems}
+    \item \textbf{System Development (Edge Execution):} Created initial inference script on Raspberry Pi 5 to run the compiled model on the Hailo NPU.
+    \item \textbf{Initial Benchmarking:} Verified single-frame leaf inference execution and monitored cooler fan behavior during test runs.
+\end{tableitems} & 
+\begin{tableitems}
+    \item Successfully executed edge model on the Hailo NPU hardware.
+    \item Confirmed stable operating temperatures under initial computational testing.
+\end{tableitems} & 
+\textcolor{darkgreen}{\textbf{Completed}}\newline
+\footnotesize{100\%} \\
+
+\midrule
+
+\textbf{Week 4}\newline
+\footnotesize{(Sep 22 -- Sep 30)} & 
+\begin{tableitems}
+    \item \textbf{Dashboard Development (Initial Scaffold):} Created basic Flask web interface to display live camera stream feed and preliminary detection bounding box.
+    \item \textbf{Enclosure Planning:} Measured physical layout dimensions of assembled board, camera, and wiring for prototype enclosure planning.
+\end{tableitems} & 
+\begin{tableitems}
+    \item Set up basic local web view accessible via browser for bench testing.
+    \item Established layout requirements for subsequent prototype housing.
+\end{tableitems} & 
+\textcolor{darkgreen}{\textbf{Completed}}\newline
+\footnotesize{100\%} \\
+
+\bottomrule
+\end{tabularx}
+
+\vspace{1.2cm}
+
+% --- Signatory Block ---
+\noindent
+\begin{minipage}[t]{0.45\textwidth}
+    \textbf{Prepared by:}\\[1.6cm]
+    \textbf{\underline{IKE S. RUSSEL}}\\[2pt]
+    Researcher / Graduate Student
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.45\textwidth}
+    \textbf{Endorsed by:}\\[1.6cm]
+    \textbf{\underline{PROF. ORVEN E. LLANTOS, PhD}}\\[2pt]
+    Thesis Adviser
+\end{minipage}
+
+\end{document}

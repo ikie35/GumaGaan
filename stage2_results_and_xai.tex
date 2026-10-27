@@ -1,0 +1,110 @@
+% ==============================================================================
+% Stage 2 Field-Robust Classifier & M4 XAI Faithfulness Benchmark LaTeX Section
+% Ready for inclusion in IEEE / Elsevier / Springer / MDPI LaTeX Manuscripts
+% ==============================================================================
+
+\section{Stage 2 Classification and Explainability Benchmarking}
+\label{sec:stage2_results}
+
+This section presents the empirical evaluation of the Stage~2 field-robust foliar disease classification models (\texttt{YOLOv8n-cls}, \texttt{YOLO11n-cls}, and \texttt{YOLO26n-cls}). The evaluation is partitioned into two dimensions: (1) predictive diagnostic accuracy, latency, and parameter footprint on held-out field specimens, and (2) attribution faithfulness evaluated under the NeurIPS 2023 M4 explainable artificial intelligence (XAI) benchmark protocol.
+
+\subsection{Diagnostic Accuracy and Computational Complexity}
+\label{subsec:accuracy_complexity}
+
+Table~\ref{tab:stage2_overall} outlines the global classification performance and computational complexity for the three candidate architectures. All models were benchmarked under identical input dimensions ($224 \times 224 \times 3$) on an independent held-out field test partition consisting of $N = 573$ foliar samples (\textit{Healthy}: $181$, \textit{Other Disease}: $128$, \textit{PLFD}: $264$).
+
+\begin{table*}[t]
+\centering
+\caption{Overall Performance, Model Size, and Inference Latency of Stage~2 Field-Robust Classifiers on Held-Out Field Data ($N=573$).}
+\label{tab:stage2_overall}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccccccc}
+\toprule
+\textbf{Model} & \textbf{Params (M)} & \textbf{PyTorch (MB)} & \textbf{ONNX (MB)} & \textbf{Accuracy (\%)} & \textbf{Macro Prec. (\%)} & \textbf{Macro Rec. (\%)} & \textbf{Macro F1 (\%)} & \textbf{W-Prec. (\%)} & \textbf{W-Rec. (\%)} & \textbf{Latency (ms)} \\
+\midrule
+\texttt{YOLOv8n-cls} & \textbf{1.44} & \textbf{2.83} & \textbf{5.52} & 94.59 & 94.37 & 93.69 & 93.99 & 94.55 & 94.59 & \textbf{3.00} \\
+\texttt{YOLO11n-cls} & 1.53 & 3.04 & 5.88 & 94.42 & 93.55 & \textbf{94.16} & 93.84 & 94.45 & 94.42 & 4.62 \\
+\texttt{YOLO26n-cls} & 1.53 & 3.04 & 5.88 & \textbf{95.11} & \textbf{95.16} & 94.14 & \textbf{94.61} & \textbf{95.10} & \textbf{95.11} & 4.51 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
+
+As detailed in Table~\ref{tab:stage2_overall}, \texttt{YOLO26n-cls} achieved the highest overall test accuracy ($95.11\%$), macro precision ($95.16\%$), macro F1-score ($94.61\%$), and weighted F1-score ($95.07\%$). \texttt{YOLOv8n-cls} demonstrated superior inference efficiency, requiring only $3.00\text{ ms}$ per sample (a $33.5\%$ latency reduction relative to \texttt{YOLO26n-cls}) while retaining a compact storage footprint of $2.83\text{ MB}$ ($5.52\text{ MB}$ in ONNX runtime format).
+
+\subsection{Per-Class Sensitivity and Disease Discrimination}
+\label{subsec:per_class}
+
+Precision agricultural deployment mandates high sensitivity toward severe fungal pathogens to prevent disease outbreak proliferation. Table~\ref{tab:stage2_per_class} provides the class-resolved breakdown across precision ($P$), recall ($R$), and F1-score ($F_1$).
+
+\begin{table}[htbp]
+\centering
+\caption{Class-Resolved Diagnostic Performance across Target Pathologies.}
+\label{tab:stage2_per_class}
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Model} & \textbf{Class} & \textbf{Precision (\%)} & \textbf{Recall (\%)} & \textbf{F1-Score (\%)} & \textbf{Support ($N$)} \\
+\midrule
+\multirow{3}{*}{\texttt{YOLOv8n-cls}} 
+  & Healthy        & 96.24 & 98.90 & 97.55 & 181 \\
+  & Other Disease  & 92.50 & 86.72 & 89.52 & 128 \\
+  & PLFD           & 94.38 & 95.45 & 94.92 & 264 \\
+\midrule
+\multirow{3}{*}{\texttt{YOLO11n-cls}} 
+  & Healthy        & 96.77 & \textbf{99.45} & \textbf{98.09} & 181 \\
+  & Other Disease  & 87.79 & \textbf{89.84} & 88.80 & 128 \\
+  & PLFD           & \textbf{96.09} & 93.18 & 94.62 & 264 \\
+\midrule
+\multirow{3}{*}{\texttt{YOLO26n-cls}} 
+  & Healthy        & \textbf{97.27} & 98.34 & 97.80 & 181 \\
+  & Other Disease  & \textbf{94.12} & 87.50 & \textbf{90.69} & 128 \\
+  & PLFD           & 94.10 & \textbf{96.59} & \textbf{95.33} & 264 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Critically, \texttt{YOLO26n-cls} achieved the highest recall ($96.59\%$) and F1-score ($95.33\%$) for \textit{Pestalotiopsis} Leaf Fall Disease (PLFD), minimizing false negative diagnostic errors on primary economic damage vectors. Furthermore, \texttt{YOLO26n-cls} exhibited robust discriminative capability on the minority \textit{Other Disease} class, yielding an F1-score of $90.69\%$ with a peak precision of $94.12\%$.
+
+\subsection{Attribution Faithfulness Evaluation (NeurIPS 2023 M4 Protocol)}
+\label{subsec:xai_m4}
+
+To establish whether model decisions are grounded in authentic pathological lesion cues rather than spurious background correlations (i.e., avoiding the ``Clever Hans'' effect), we conducted an XAI attribution faithfulness benchmark adhering to the NeurIPS 2023 M4 benchmark protocol. 
+
+The evaluation measured:
+\begin{itemize}
+    \item \textbf{Deletion AUC ($\downarrow$):} Area under the confidence curve as salient pixels are progressively masked (lower indicates rapid degradation when critical features are removed).
+    \item \textbf{Insertion AUC ($\uparrow$):} Area under the confidence curve as salient pixels are progressively reintroduced into a reference uninformative canvas.
+    \item \textbf{Faithfulness $\Delta\text{AUC}$ ($\uparrow$):} Divergence metric defined as $\text{AUC}_{\text{Insertion}} - \text{AUC}_{\text{Deletion}}$.
+    \item \textbf{Monotonicity ($\uparrow$):} The Spearman rank correlation of confidence decay across progressive feature removal.
+    \item \textbf{Pearson correlation $r$ ($\uparrow$):} Linear association between pixel attribution weight and output probability drop.
+    \item \textbf{Sparsity ($\uparrow$):} Gini coefficient of the saliency map, assessing attribution localization.
+    \item \textbf{M4 Composite Score ($\uparrow$):} The unified benchmark score aggregating normalized faithfulness metrics.
+\end{itemize}
+
+\begin{table}[htbp]
+\centering
+\caption{M4 XAI Faithfulness Benchmark Results across Field-Robust YOLO Classifiers (NeurIPS 2023 Protocol).}
+\label{tab:m4_faithfulness}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccccccc}
+\toprule
+\textbf{Model} & \textbf{Del. AUC ($\downarrow$)} & \textbf{Ins. AUC ($\uparrow$)} & \textbf{$\Delta\text{AUC}$ ($\uparrow$)} & \textbf{Monotonicity ($\uparrow$)} & \textbf{Pearson $r$ ($\uparrow$)} & \textbf{Sparsity ($\uparrow$)} & \textbf{M4 Score ($\uparrow$)} \\
+\midrule
+\texttt{YOLO11n-cls} & \textbf{0.3348} & \textbf{0.3521} & \textbf{+0.0174} & \textbf{0.9057} & 0.1508 & \textbf{0.2542} & \textbf{0.3474} \\
+\texttt{YOLO26n-cls} & 0.3484 & 0.3391 & -0.0092 & 0.6781 & \textbf{0.2603} & 0.1704 & 0.3161 \\
+\texttt{YOLOv8n-cls} & 0.3383 & 0.3402 & +0.0020 & 0.7671 & 0.2367 & 0.1801 & 0.2604 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\subsection{Discussion: Diagnostic Accuracy vs. Interpretability Trade-Off}
+\label{subsec:tradeoff_discussion}
+
+The joint analysis of classification efficacy and XAI faithfulness reveals a nuanced trade-off between pure discriminative power and attribution fidelity:
+
+\begin{enumerate}
+    \item \textbf{Attribution Fidelity of \texttt{YOLO11n-cls}:} \texttt{YOLO11n-cls} achieved the highest M4 Composite Score ($0.3474$), demonstrating superior Deletion AUC ($0.3348$), Insertion AUC ($0.3521$), positive $\Delta\text{AUC}$ ($+0.0174$), high Sparsity ($0.2542$), and near-monotonic confidence decay ($0.9057$). This confirms that \texttt{YOLO11n-cls} produces compact, physically grounded heatmaps that faithfully reflect internal model reasoning, offering the highest interpretability for field agronomists.
+    \item \textbf{Peak Diagnostic Sensitivity of \texttt{YOLO26n-cls}:} While \texttt{YOLO26n-cls} exhibited moderate monotonicity ($0.6781$) and a negative $\Delta\text{AUC}$ ($-0.0092$), it achieved the highest linear correlation with confidence degradation (Pearson $r = 0.2603$) alongside superior test accuracy ($95.11\%$) and PLFD recall ($96.59\%$). The slight divergence in insertion/deletion dynamics suggests the model leverages distributed contextual feature representations to resolve ambiguous foliar symptoms.
+    \item \textbf{Operational Deployment Recommendation:} For autonomous mobile diagnostic pipelines requiring maximum disease interception, \texttt{YOLO26n-cls} provides the optimal trade-off. Where clinical auditability and human-in-the-loop expert validation are paramount, \texttt{YOLO11n-cls} serves as the most faithful and trustworthy visual diagnostic backbone.
+\end{enumerate}

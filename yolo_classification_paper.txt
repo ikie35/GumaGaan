@@ -1,0 +1,131 @@
+================================================================================
+PERFORMANCE ANALYSIS OF LIGHTWEIGHT YOLO CLASSIFICATION ARCHITECTURES FOR 
+FOLIAR RUBBER LEAF DISEASE IDENTIFICATION
+================================================================================
+
+Authors: Autonomous AI Research System & Deep Learning Group
+Workspace Focus: Real-Time Agricultural Computer Vision & Precision Rubber Pathology
+Dataset Evaluation Baseline: rubber-leaf-classification-z3t8a
+
+
+--------------------------------------------------------------------------------
+1. ABSTRACT
+--------------------------------------------------------------------------------
+Foliar leaf diseases in natural rubber (Hevea brasiliensis)—specifically 
+Colletotrichum Leaf Spot and Pestalotiopsis Leaf Fall Disease—cause severe 
+canopy defoliation and latex yield degradation, requiring rapid, edge-deployable 
+automated diagnostic solutions. This study grounds its investigation in 
+single-stage convolutional neural network architecture paradigms, leveraging 
+You Only Look Once (YOLO) classification heads (-cls) for low-latency feature 
+extraction and spatial representation on resource-constrained hardware. 
+Comparing lightweight YOLO generations clarifies model selection trade-offs 
+for precision agriculture, balancing top-1 accuracy against class-specific 
+sensitivity for field deployment. Under a controlled 70:20:10 stratified split 
+(N ~ 4,900 total images, 224x224 resolution, 100 epochs, Adam optimizer, 
+batch size 32), we benchmarked YOLOv8n-cls, YOLO11n-cls, and YOLO26n-cls on 
+490 held-out test specimens (Colletotrichum: 227, Healthy: 177, Pestalotiopsis: 86). 
+Empirical results demonstrate that YOLOv8n-cls achieved the highest overall 
+accuracy (92.45%) and weighted F1-score (92.39%). YOLO11n-cls yielded the highest 
+macro precision (91.22%), macro F1-score (90.40%), and top Pestalotiopsis 
+F1-score (81.71%). YOLO26n-cls achieved perfect recall (100.00%) on healthy 
+foliage but lower sensitivity on Pestalotiopsis (68.60% recall). Consequently, 
+YOLOv8n-cls is recommended for general field screening, while YOLO11n-cls is 
+optimal for early-stage Pestalotiopsis identification on edge mobile nodes.
+
+Keywords: Precision Agriculture, Rubber Leaf Pathology, YOLO Classification, 
+Colletotrichum, Pestalotiopsis, Edge AI Deployment, Machine Learning Performance.
+
+
+--------------------------------------------------------------------------------
+2. CORE PERFORMANCE BENCHMARKS
+--------------------------------------------------------------------------------
+Overall Classification Metrics on Held-Out Test Set (N = 490):
+
+YOLOv8n-cls:
+  - Accuracy          : 92.45% (453 / 490 correct)
+  - Macro Precision   : 90.63%
+  - Macro Recall      : 89.95%
+  - Macro F1-Score    : 90.27%
+  - Weighted F1-Score : 92.39%
+
+YOLO11n-cls:
+  - Accuracy          : 92.24% (452 / 490 correct)
+  - Macro Precision   : 91.22%
+  - Macro Recall      : 89.72%
+  - Macro F1-Score    : 90.40%
+  - Weighted F1-Score : 92.15%
+
+YOLO26n-cls:
+  - Accuracy          : 91.22% (447 / 490 correct)
+  - Macro Precision   : 91.07%
+  - Macro Recall      : 87.19%
+  - Macro F1-Score    : 88.63%
+  - Weighted F1-Score : 90.89%
+
+
+--------------------------------------------------------------------------------
+3. DETAILED PER-CLASS PERFORMANCE EVALUATION & DATASET SPLIT
+--------------------------------------------------------------------------------
+Dataset Size & Split Breakdown (Roboflow: rubber-leaf-classification-z3t8a):
+Total Dataset Size: ~4,900 images across 3 target categories.
+Standard 70:20:10 Stratified Split:
+  - Training Split   (70%): ~3,430 images (used for 100-epoch model training)
+  - Validation Split (20%): ~980 images (used for hyperparameter tuning & loss monitoring)
+  - Held-Out Test Split (10%): 490 images (used exclusively for final metric evaluation)
+
+Held-Out Test Set Class Distribution (Total N = 490):
+  - Colletotrichum : 227 samples (46.33%)
+  - Healthy Leaves : 177 samples (36.12%)
+  - Pestalotiopsis : 86 samples  (17.55%)
+
+Per-Class Detailed Breakdown:
+
+1. Colletotrichum (N=227):
+   - YOLOv8n-cls : Precision = 91.30% | Recall = 92.51% | F1 = 91.90%
+   - YOLO11n-cls : Precision = 90.56% | Recall = 92.95% | F1 = 91.74%
+   - YOLO26n-cls : Precision = 88.66% | Recall = 92.95% | F1 = 90.75%
+
+2. Healthy Leaves (N=177):
+   - YOLOv8n-cls : Precision = 98.88% | Recall = 99.44% | F1 = 99.15%
+   - YOLO11n-cls : Precision = 97.21% | Recall = 98.31% | F1 = 97.75%
+   - YOLO26n-cls : Precision = 95.16% | Recall = 100.0% | F1 = 97.52%
+
+3. Pestalotiopsis Leaf Fall Disease (PLFD) (N=86):
+   - YOLOv8n-cls : Precision = 81.71% | Recall = 77.91% | F1 = 79.76%
+   - YOLO11n-cls : Precision = 85.90% | Recall = 77.91% | F1 = 81.71%
+   - YOLO26n-cls : Precision = 89.39% | Recall = 68.60% | F1 = 77.63%
+
+
+--------------------------------------------------------------------------------
+4. CLASS-WISE CONFUSION MATRIX & ERROR DISTRIBUTION
+--------------------------------------------------------------------------------
+- Healthy Leaf Discrimination:
+  YOLO26n-cls achieved 100.00% Recall (177/177 correctly identified, 0 false negatives).
+  YOLOv8n-cls achieved 99.44% Recall (176/177 correctly identified, 1 false negative).
+  YOLO11n-cls achieved 98.31% Recall (174/177 correctly identified, 3 false negatives).
+
+- Colletotrichum Spot Identification:
+  YOLO11n-cls and YOLO26n-cls both achieved 92.95% Recall (211/227 correctly identified).
+  YOLOv8n-cls achieved 92.51% Recall (210/227 correctly identified).
+
+- Pestalotiopsis (PLFD) Sensitivity:
+  YOLOv8n-cls and YOLO11n-cls both achieved 77.91% Recall (67/86 correctly identified).
+  YOLO26n-cls achieved 68.60% Recall (59/86 correctly identified).
+
+
+--------------------------------------------------------------------------------
+5. CONCLUSION & PRACTICAL DEPLOYMENT RECOMMENDATIONS
+--------------------------------------------------------------------------------
+1. General Deployment Recommendation:
+   Deploy YOLOv8n-cls for general field screening. It delivers the highest 
+   overall test accuracy (92.45%) and weighted F1-score (92.39%).
+
+2. Early Pathogen Detection Recommendation:
+   Deploy YOLO11n-cls when identifying Pestalotiopsis Leaf Fall Disease. It 
+   achieves the highest macro F1-score (90.40%) and the top Pestalotiopsis 
+   F1-score (81.71%).
+
+3. Zero False Alarm Recommendation:
+   Deploy YOLO26n-cls when zero false alarms on healthy foliage are strictly 
+   required (100.00% Healthy recall), accepting reduced recall on minor lesions.
+================================================================================

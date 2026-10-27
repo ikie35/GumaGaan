@@ -1,0 +1,4 @@
+Model Variant,Scale Size,Parameters (M),GFLOPS,Weights (.pt),Val mAP50 (%),Test mAP50 (%),Test mAP50-95 (%),Precision (%),Recall (%),F1-Score (%),GPU Latency (ms),Train Time (min),ONNX Export File
+YOLO11n,Nano (2.6M),2.58,N/A,5.22 MB,97.83,94.7,85.45,88.34,91.88,90.08,7.87,31.1,stage1_yolo11n_640.onnx
+YOLO11s,Small (9.4M),9.41,N/A,18.29 MB,94.93,94.82,81.9,90.35,92.39,91.36,10.45,35.2,stage1_yolo11s_640.onnx
+YOLO11m,Medium (20.1M),20.03,N/A,38.65 MB,96.16,95.85,81.83,87.26,89.34,88.29,26.08,110.3,stage1_yolo11m_640.onnx

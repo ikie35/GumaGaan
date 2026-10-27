@@ -1,0 +1,2 @@
+Model,Parameters (M),Weights (.pt) MB,ONNX (MB),Test Accuracy (%),Macro Precision (%),Macro Recall (%),Macro F1-Score (%),Weighted F1 (%),GPU Latency (ms),Train Time (min)
+YOLO11n-cls (Field-Robust),1.53,3.04,5.88,94.42,93.55,94.16,93.84,94.42,3.95,12.6

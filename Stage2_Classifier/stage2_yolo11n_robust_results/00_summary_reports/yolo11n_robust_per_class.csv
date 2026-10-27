@@ -1,0 +1,4 @@
+Disease Class,Precision (%),Recall (%),F1-Score (%),Test Support
+Healthy,96.77,99.45,98.09,181
+Other Disease,87.79,89.84,88.8,128
+PLFD,96.09,93.18,94.62,264

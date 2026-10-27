@@ -1,0 +1,506 @@
+================================================================================
+RASPBERRY PI 5 - BEGINNER'S SETUP & APPLICATION RUN GUIDE
+================================================================================
+This guide will walk you through setting up a bare Raspberry Pi 5 (without an
+AI HAT) and running your Two-Stage Rubber Leaf Disease Detection & Classification
+web application on its CPU.
+
+--------------------------------------------------------------------------------
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+1. Hardware Setup & Requirements
+2. Flashing the Operating System (OS)
+3. Booting up and Connecting Remotely (SSH, VNC, RDP, Hotspot)
+4. Installing Python & System Libraries on the Pi
+5. Transferring Your Project Code to the Pi
+6. Running the Web Application
+7. Troubleshooting & Useful Commands
+
+================================================================================
+1. HARDWARE SETUP & REQUIREMENTS
+================================================================================
+Before you start, make sure you have:
+- A Raspberry Pi 5 board.
+- A microSD card (at least 32GB, Class 10/A1 or A2 recommended for speed).
+- A USB-C power supply (Official Raspberry Pi 27W Power Supply is highly recommended).
+- An active cooler or case fan (the Pi 5 runs hot and will slow down without it).
+- A Windows PC (on the same Wi-Fi network as the Pi).
+
+Hardware Setup:
+1. Attach the active cooler/fan onto the Pi 5. Plug the fan cable into the fan port.
+2. Do not plug in power yet.
+
+================================================================================
+2. FLASHING THE OPERATING SYSTEM (OS)
+================================================================================
+Do this on your Windows PC:
+
+1. Download and install the "Raspberry Pi Imager" from:
+   https://www.raspberrypi.com/software/
+2. Insert your microSD card into your PC's card reader.
+3. Open the Raspberry Pi Imager:
+   - CHOOSE DEVICE: Select "Raspberry Pi 5".
+   - CHOOSE OS: Select "Raspberry Pi OS (64-bit)" (recommended: Bookworm Desktop).
+     *Note: Do NOT choose the 32-bit version; 64-bit is required for machine learning.*
+   - CHOOSE STORAGE: Select your microSD card.
+4. Click NEXT.
+5. A popup will ask: "Would you like to apply OS customization settings?"
+   Click EDIT SETTINGS.
+6. Configure the following critical settings:
+   - GENERAL TAB:
+     * Check "Set username and password" (e.g., username: pi, password: yourpassword).
+     * Check "Configure wireless LAN", enter your Wi-Fi SSID (Name) and Password.
+     * Set Wireless LAN country (e.g., US, SG, PH).
+   - SERVICES TAB:
+     * Check "Enable SSH" -> Select "Use password authentication".
+7. Click SAVE, then click YES to write the image.
+8. Once complete, eject the microSD card from your PC and insert it into the Pi 5.
+
+================================================================================
+3. BOOTING UP AND CONNECTING REMOTELY (SSH, VNC, XRDP & LAPTOP HOTSPOT)
+================================================================================
+You do not need a monitor, keyboard, or mouse to run the Pi long-term. You can control
+it completely from your Windows PC. Below are the steps to connect remotely, including
+how to set it up if you currently have a temporary (borrowed) monitor and keyboard.
+
+--------------------------------------------------------------------------------
+A. If Using a Temporary Monitor & Keyboard (Pre-Setup)
+--------------------------------------------------------------------------------
+If you have a monitor and keyboard connected now, configure remote access before
+unplugging them:
+
+1. Enable SSH & VNC:
+   - GUI: Go to Raspberry Menu -> Preferences -> Raspberry Pi Configuration -> 
+     Interfaces tab -> Enable SSH and VNC -> Click OK.
+   - Terminal: Run `sudo raspi-config` -> Interface Options -> Enable SSH and VNC.
+
+2. Get connection details:
+   - Run `hostname -I` in the terminal to find the Pi's IP address.
+   - Run `whoami` to check your username (e.g. "pi").
+
+3. (Optional) Install Windows Remote Desktop (XRDP):
+   - Run `sudo apt update && sudo apt install -y xrdp` in the terminal.
+   - This allows you to connect from your Windows PC using the built-in "Remote 
+     Desktop Connection" tool without installing any other apps.
+
+--------------------------------------------------------------------------------
+B. Connecting via Laptop Hotspot (Highly Recommended for Portability)
+--------------------------------------------------------------------------------
+If you don't have a reliable Wi-Fi network or want to connect directly to your laptop:
+
+1. Turn on Mobile Hotspot on your Windows Laptop:
+   - Go to Settings -> Network & internet -> Mobile hotspot.
+   - Turn it ON. Note the Network Name (SSID) and Password.
+
+2. Connect the Pi to the Hotspot:
+   - Click the Wi-Fi icon on the Pi desktop.
+   - Select your laptop's hotspot network and enter the password.
+   - The Pi will now automatically connect to your laptop whenever the hotspot is ON.
+
+3. Find the Pi's IP Address from the Laptop:
+   - Go to the Mobile hotspot settings on your Windows laptop.
+   - Scroll down to "Devices connected".
+   - You will see the Pi listed with its IP address (typically `192.168.137.xx`).
+
+--------------------------------------------------------------------------------
+C. Connecting from your Windows PC
+--------------------------------------------------------------------------------
+Once the Pi is booted up and connected to the same Wi-Fi (or your laptop's hotspot):
+
+1. Command Line Access (SSH):
+   - Open PowerShell or Command Prompt on Windows.
+   - Run: `ssh username@<ip-address>` (or `ssh username@raspberrypi.local`).
+   - Enter your password when prompted.
+
+2. Graphical Desktop Access (VNC):
+   - Install VNC Viewer on Windows: https://www.realvnc.com/en/connect/download/viewer/
+   - Enter your Pi's IP address or `raspberrypi.local` to view the screen.
+
+3. Graphical Desktop Access (Windows Remote Desktop):
+   - Open the "Remote Desktop Connection" app on Windows (`mstsc`).
+   - Enter the Pi's IP address and click Connect. Log in with your Pi credentials.
+
+--------------------------------------------------------------------------------
+E. Standard Protocol: Switching from Hotspot Mode to Wi-Fi Network
+--------------------------------------------------------------------------------
+Every time you want to transition the Raspberry Pi from Hotspot mode back to 
+connecting to a local Wi-Fi router (Home / Lab / Phone hotspot):
+
+1. Desktop GUI / VNC / Screen Method:
+   - Click the Wi-Fi icon on the top-right desktop panel tray.
+   - If Hotspot is active, disconnect/toggle it off.
+   - Select your target Wi-Fi SSID from the available network dropdown.
+   - Enter the Wi-Fi password and connect.
+
+2. Check the New Assigned IP Address:
+   - Open the terminal and run:
+       hostname -I
+   - Note the assigned IP address (e.g., 192.168.1.xxx or 192.168.137.xxx).
+
+3. Connect & Deploy from Windows:
+   - Run PowerShell upload with the newly assigned IP:
+       .\upload_to_raspi.ps1 -TargetIP "<NEW_PI_IP>"
+
+================================================================================
+4. INSTALLING PYTHON & SYSTEM LIBRARIES ON THE PI
+================================================================================
+Once you are logged into the Pi via SSH, run the following commands to install
+necessary software:
+
+1. Update the system package repository and upgrade packages:
+   sudo apt update && sudo apt upgrade -y
+
+2. Install system packages required for OpenCV and Python environments:
+   sudo apt install -y git python3-venv python3-pip libgl1-mesa-glx libglib2.0-0
+
+   *Note: "libgl1-mesa-glx" and "libglib2.0-0" are required for OpenCV to render
+   and process images on headless Linux systems.*
+
+================================================================================
+5. TRANSFERRING YOUR PROJECT CODE TO THE PI
+================================================================================
+To run the web app, you must copy your "Two stage Rubber Disease" project files
+to the Pi.
+
+Option A: Using WinSCP (Easiest GUI method)
+1. Download and install WinSCP on your Windows PC: https://winscp.net/
+2. Open WinSCP:
+   - File protocol: SFTP
+   - Host name: raspberrypi.local
+   - Port number: 22
+   - Username & Password: (the ones you configured in Step 2)
+3. Click Login.
+4. Drag and drop your "Two stage Rubber Disease" folder from your Windows PC (left side)
+   into the "/home/username" directory of the Pi (right side).
+
+Option B: Using Git (If your code is on GitHub)
+1. In the Pi terminal, run:
+   git clone https://github.com/your-username/your-repo-name.git
+   cd your-repo-name
+
+================================================================================
+6. RUNNING THE WEB APPLICATION
+================================================================================
+Once your files are on the Pi:
+
+1. Open the project folder in your Pi terminal:
+   cd "/home/username/Two stage Rubber Disease"
+   (Replace "username" with your actual Pi username).
+
+2. Create a Python Virtual Environment to keep libraries isolated:
+   python3 -m venv venv
+
+3. Activate the Virtual Environment:
+   source venv/bin/activate
+   (You will see "(venv)" appear at the start of your command prompt).
+
+4. Install the required libraries inside the virtual environment:
+   pip install --upgrade pip
+   pip install ultralytics flask opencv-python numpy
+
+5. Start the web application:
+   python app.py
+
+6. Open your web browser on your Windows PC or Mobile Phone (connected to the same Wi-Fi)
+   and navigate to:
+   http://raspberrypi.local:5000
+   OR
+   http://<your-pi-ip-address>:5000
+
+================================================================================
+7. TROUBLESHOOTING & USEFUL COMMANDS
+================================================================================
+- Finding your Pi's IP Address:
+  If "raspberrypi.local" does not work, run this command on the Pi terminal to find
+  its Wi-Fi IP address:
+  hostname -I
+
+- Stopping the Web App:
+  Press CTRL+C in the terminal running the app to stop the Flask server.
+
+- Reactivating the environment:
+  Every time you open a new SSH window, you must navigate to the folder and activate
+  the virtual environment again:
+  cd "/home/username/Two stage Rubber Disease"
+  source venv/bin/activate
+
+- OpenCV Errors (ImportError: libGL.so.1):
+  If the app fails to start with OpenCV errors, double-check that you ran:
+  sudo apt install libgl1-mesa-glx -y
+
+- Camera Access / Permissions on the Pi:
+  If the backend camera feed fails to open or says "Physical camera not detected", verify:
+  1. Your USB webcam or Pi camera module is plugged in securely.
+  2. Run `ls /dev/video*` in the Pi terminal to verify that the camera device is mapped (typically `/dev/video0`).
+  3. Ensure your user (`ikee`) has permission to access video devices:
+     sudo usermod -aG video ikee
+     (Restart the Pi or log out and log back in for changes to take effect).
+  4. If using the official Pi Camera module on Raspberry Pi OS Bookworm, V4L2 compatibility is loaded by default. 
+     You can confirm it is recognized by running:
+     v4l2-ctl --list-devices
+
+================================================================================
+8. AUTOMATING APP STARTUP (HOW TO RUN EVERYTIME)
+================================================================================
+To avoid typing the folder path, activating the virtual environment, and starting 
+the app manually every time, you can use one of these two methods:
+
+--------------------------------------------------------------------------------
+METHOD A: Quick Startup Desktop/Terminal Shortcut Script (Recommended for manual launch)
+--------------------------------------------------------------------------------
+1. Create a launch script on your Pi:
+   nano /home/ikee/Two\ stage\ Rubber\ Disease/start_app.sh
+
+2. Paste the following lines into the file:
+   #!/bin/bash
+   cd "/home/ikee/Two stage Rubber Disease"
+   source venv/bin/activate
+   python app.py
+
+3. Save and close (Press CTRL+O, Enter, then CTRL+X).
+
+4. Make the script executable:
+   chmod +x /home/ikee/Two\ stage\ Rubber\ Disease/start_app.sh
+
+5. From now on, you can start the app in just one command:
+   /home/ikee/Two\ stage\ Rubber\ Disease/start_app.sh
+
+--------------------------------------------------------------------------------
+METHOD B: Run Automatically on Boot (No Terminal Needed!)
+--------------------------------------------------------------------------------
+This sets the app to run as a system service. It will start automatically when
+the Pi powers on, and restart itself if it ever crashes.
+
+1. Create a systemd service file:
+   sudo nano /etc/systemd/system/rubber_disease.service
+
+2. Paste the following configuration:
+   [Unit]
+   Description=Rubber Leaf Disease Web Application
+   After=network.target
+
+   [Service]
+   User=ikee
+   WorkingDirectory=/home/ikee/Two stage Rubber Disease
+   ExecStart=/home/ikee/Two stage Rubber Disease/venv/bin/python app.py
+   Restart=always
+
+   [Install]
+   WantedBy=multi-user.target
+
+3. Save and close (Press CTRL+O, Enter, then CTRL+X).
+
+4. Reload the system services:
+   sudo systemctl daemon-reload
+
+5. Enable the service so it runs on boot:
+   sudo systemctl enable rubber_disease.service
+
+6. Start the service now:
+   sudo systemctl start rubber_disease.service
+
+7. Service Management Commands:
+   - Check status:  sudo systemctl status rubber_disease.service
+   - Stop the app:  sudo systemctl stop rubber_disease.service
+   - Start the app: sudo systemctl start rubber_disease.service
+   - Restart app:   sudo systemctl restart rubber_disease.service
+
+================================================================================
+9. CONFIGURING AN OFFLINE WI-FI ACCESS POINT (HOTSPOT)
+================================================================================
+To run the system completely offline in the field (where no routers or internet
+are available), you can configure the Pi 5 to broadcast its own Wi-Fi network.
+Connected laptops/phones will then be able to load the dashboard.
+
+Since Raspberry Pi OS Bookworm, "NetworkManager" is the default system network 
+handler. Setting up a hotspot is simple using nmcli:
+
+1. Create and Start the Hotspot:
+   sudo nmcli device wifi hotspot ssid "RubberLeaf-AI-Net" password "rubberleaf123" ifname wlan0
+
+2. Auto-start on Boot:
+   By default, NetworkManager will start this hotspot profile. To check your 
+   active connections and profiles, run:
+   nmcli connection show
+
+3. Finding the Host IP:
+   - When devices connect to "RubberLeaf-AI-Net", the Pi will act as their DHCP gateway.
+   - Typically, the Pi's IP address on this network interface will be:
+     192.168.137.1 or 192.168.4.1
+   - You can verify this IP by running:
+     ip addr show wlan0
+   - Users can access the app by opening their browser and going to:
+     http://192.168.137.1:5000 (or the IP listed under wlan0)
+
+4. To Stop the Hotspot and Reconnect to standard Wi-Fi:
+   sudo nmcli connection down Hotspot
+   (Note: NetworkManager automatically titles the connection profile "Hotspot").
+
+================================================================================
+10. HAILO-8L NPU COMPILATION & OPTIMIZED ONNX EXECUTION
+================================================================================
+To upgrade from CPU execution (~5 FPS) to full real-time NPU speed (~30 FPS):
+
+1. Export ONNX Models from Training Output:
+   Your training scripts automatically output ONNX weights:
+   - Stage 1: `stage1_leaf_detector.onnx`
+   - Stage 2: `stage2_classifier.onnx`
+
+2. Compile ONNX to Hailo HEF format using Hailo Dataflow Compiler (DFC):
+   Run on your PC or Docker Hailo environment:
+   
+   a) Stage 1 Detector Compilation:
+      hailo compiler stage1_leaf_detector.onnx --hw-arch hailo8l --output stage1_detector.hef
+      
+   b) Stage 2 Classifier Compilation:
+      hailo compiler stage2_classifier.onnx --hw-arch hailo8l --output stage2_classifier.hef
+
+3. Running ONNX Runtime directly on Pi 5 CPU (Immediate 2x Speedup):
+   If running CPU-only without an AI Kit, install ONNX Runtime on the Pi:
+   pip install onnxruntime
+   
+   The web application (`app.py`) automatically detects `.onnx` weight files in your 
+   weights folder and loads them for batch execution.
+
+================================================================================
+11. RASPBERRY PI 5: ARDUCAM & HAILO AI HAT HARDWARE VERIFICATION & SETUP
+================================================================================
+
+A. HAILO AI HAT (HAILO-8 / HAILO-8L) INSTALLATION & VERIFICATION
+--------------------------------------------------------------------------------
+1. Enable PCIe Interface on Raspberry Pi 5:
+   Edit `/boot/firmware/config.txt`:
+   sudo nano /boot/firmware/config.txt
+
+   Add the following lines at the end:
+   dtparam=pciex1
+   dtparam=pciex1_gen=3
+
+2. Install Hailo Drivers & Software Suite:
+   sudo apt update
+   sudo apt install -y hailo-all
+
+3. Reboot the Pi:
+   sudo reboot
+
+4. Verify PCIe & Hailo Hardware Recognition:
+   - Check PCIe Bus:
+     lspci
+     (Look for "Co-processor: Hailo Technologies Ltd.")
+   - Check Hailo Firmware Status:
+     hailortcli fw-control identify
+     (Should report Hailo-8 or Hailo-8L device details, board type, and firmware version).
+
+B. ARDUCAM CAM/CSI CAMERA INSTALLATION & VERIFICATION
+--------------------------------------------------------------------------------
+1. Cable Connection:
+   - Connect Arducam to CAM0 or CAM1 port using the 22-pin FPC ribbon cable.
+   - Ensure contact pins face the correct orientation.
+
+2. Overlay Configuration in `/boot/firmware/config.txt`:
+   - DUAL CAMERA SETUP (CONNECT BOTH CAMERAS AT THE SAME TIME!):
+     Plug Pi Camera 3 into CAM0 and Arducam 16MP into CAM1:
+     camera_auto_detect=0
+     dtoverlay=imx708,cam0
+     dtoverlay=imx519,cam1
+
+   - SINGLE CAMERA MODE:
+     * Pi Camera Module 3: camera_auto_detect=1
+     * Arducam 16MP:      camera_auto_detect=0 & dtoverlay=imx519,cam0
+
+3. Select & Verify Cameras in `rpicam`:
+   - List both detected cameras:
+     rpicam-hello --list-cameras
+   - Preview Pi Camera 3 (Camera Index 0):
+     rpicam-hello -t 0 --camera 0
+   - Preview Arducam 16MP (Camera Index 1):
+     rpicam-hello -t 0 --camera 1
+
+4. Running Flask / OpenCV with Dual Cameras:
+   - OpenCV `cv2.VideoCapture(0)` connects to Camera 0 (Pi Camera 3).
+   - OpenCV `cv2.VideoCapture(1)` connects to Camera 1 (Arducam 16MP).
+   - Launch your web application using libcamerify wrapper:
+     libcamerify python app.py
+
+================================================================================
+12. EXTERNAL DISPLAY & KIOSK MODE SETUP (FIELD TOUCHSCREEN / MONITOR)
+================================================================================
+To access and display your AI Rubber Leaf Disease dashboard on an external screen 
+(e.g., HDMI monitor or field touchscreen plugged into the Pi 5's micro-HDMI port):
+
+METHOD A: MANUAL OPEN ON PI DESKTOP
+--------------------------------------------------------------------------------
+1. Plug your HDMI cable from the monitor/touchscreen into micro-HDMI port 0 (closest to power USB-C).
+2. Start the web application on the Pi:
+   cd "/home/ikee/Two stage Rubber Disease"
+   source venv/bin/activate
+   libcamerify python app.py
+3. Open Chromium browser on the Pi desktop.
+4. Navigate to:
+   http://localhost:5000  (or http://127.0.0.1:5000)
+5. Press F11 to switch Chromium to Fullscreen Mode.
+
+METHOD B: AUTOMATED FULLSCREEN KIOSK MODE (BOOT DIRECTLY TO AI DASHBOARD)
+--------------------------------------------------------------------------------
+To make the Raspberry Pi boot up and automatically launch the dashboard full-screen:
+
+1. Create an autostart desktop entry:
+   mkdir -p /home/ikee/.config/autostart
+   nano /home/ikee/.config/autostart/rubber_kiosk.desktop
+
+2. Paste the following configuration:
+   [Desktop Entry]
+   Type=Application
+   Name=Rubber Disease Kiosk
+   Exec=chromium-browser --kiosk --noerrdialogs --disable-infobars --check-for-update-interval=31536000 http://localhost:5000
+   X-GNOME-Autostart-enabled=true
+
+3. Save and close (CTRL+O, Enter, CTRL+X).
+
+Now, whenever the Pi powers on with an HDMI screen attached, it will start the app and display the live AI detection dashboard automatically in full screen!
+
+================================================================================
+13. HARDWARE GNSS / GPS MODULE INTEGRATION (u-blox NEO-M8N / NEO-6M / USB)
+================================================================================
+The application features an integrated asynchronous GNSS receiver daemon that 
+automatically parses NMEA sentences ($GNRMC, $GNGGA) to geotag leaf disease detections 
+with precision latitude, longitude, altitude, and satellite lock status.
+
+1. GPIO Pinout (UART Interface):
+   +---------------------+-------------------------------+
+   | GPS Module Pin      | Raspberry Pi 5 Header Pin     |
+   +---------------------+-------------------------------+
+   | VCC                 | Pin 2 or 4 (5.0V / 3.3V)      |
+   | GND                 | Pin 6 (Ground)                |
+   | TXD (Transmit)      | Pin 10 (GPIO 15 / RXD0)       |
+   | RXD (Receive)       | Pin 8  (GPIO 14 / TXD0)       |
+   +---------------------+-------------------------------+
+
+2. Enable UART Serial Port on Raspberry Pi 5:
+   - Run: `sudo raspi-config`
+   - Navigate to: Interface Options -> Serial Port
+   - "Would you like a login shell over serial?" -> Select NO
+   - "Would you like serial port hardware to be enabled?" -> Select YES
+   - Reboot the Pi: `sudo reboot`
+
+3. Verify Serial Device & Raw NMEA Sentences:
+   - Check available serial interfaces:
+     ls -l /dev/ttyAMA0 /dev/serial0 /dev/ttyUSB0
+   - Test raw NMEA stream (Ctrl+C to stop):
+     cat /dev/ttyAMA0
+     (You should see live sentences starting with $GNRMC, $GNGGA, $GPGSV)
+
+4. Python Serial Dependency:
+   - Ensure pyserial is installed in your virtual environment:
+     source venv/bin/activate
+     pip install pyserial
+
+5. Live Telemetry Verification in App:
+   - The backend auto-detects `/dev/ttyAMA0`, `/dev/serial0`, `/dev/ttyUSB0`.
+   - Test telemetry endpoint via curl or browser:
+     curl http://localhost:5000/api/gps
+   - Output format:
+     {"status": "locked", "latitude": 7.123456, "longitude": 125.654321, "satellites": 9, "altitude_m": 142.5, "source": "Hardware NEO-M8N"}
+
+================================================================================
+

@@ -1,0 +1,246 @@
+================================================================================
+MASTER'S THESIS MONTHLY PROGRESS REPORTS (AUGUST – DECEMBER 2026)
+Project: Two-Stage Deep Learning Pipeline for Rubber Leaf Disease Detection and Edge Deployment
+Platform: Raspberry Pi 5 + Raspberry Pi AI HAT (Hailo-8L NPU, 13 TOPS)
+Student: IKE S. RUSSEL (MS Computer Applications)
+Adviser: PROF. ORVEN E. LLANTOS, PhD
+================================================================================
+
+
+================================================================================
+PROGRESS REPORT
+For the Period of August 2026
+================================================================================
+
+No. of Week
+Activity
+Remarks
+Status
+
+Week 1 (August 3 – August 9)
+• Collected, curated, and organized raw rubber tree leaf field imagery across target disease categories into Roboflow workspace.
+• Performed bounding box annotations for Stage 1 rubber leaf localization, differentiating target canopies and foliage from background noise.
+• Curated, cropped, and labeled Stage 2 disease classification dataset (Powdery Mildew, Bird's Eye Spot, Colletotrichum, Pestalotiopsis, Healthy).
+• Configured dataset splitting (70% Train, 20% Val, 10% Test) and established online stochastic data augmentation strategies.
+Established foundational image repository for multi-stage vision models.
+Standardized annotation guidelines to minimize boundary ambiguity across leaf clusters.
+Resolved class imbalance and verified disease symptom visibility per sample.
+Ensured zero data leakage between splits for unbiased model evaluation.
+Completed 100%
+
+Week 2 (August 10 – August 16)
+• Hardware Acquisition: Procured Raspberry Pi 5 (8GB), official active cooler & protective casing, 27W (5V 5A) power adapter, Raspberry Pi Camera Module 3 (Wide), and Raspberry Pi AI HAT (Hailo-8L NPU).
+• Audited Stage 2 dataset for improper bounding box crops; verified dataset integrity prior to model training.
+• Prepared high-speed MicroSD storage, validated peripheral compatibility, and prepared edge installation guides.
+Acquired complete edge hardware inventory and dedicated power/cooling components.
+Resolved dataset cropping irregularities to reduce classification noise.
+Documented hardware specifications and planned edge installation environment.
+Completed 100%
+
+Week 3 (August 17 – August 23)
+• Configured Kaggle GPU training pipelines with automated artifact packaging (.pt, .onnx, validation plots, CSV metrics).
+• Trained Stage 1 YOLO rubber leaf detector on single-class dataset for 100 epochs; monitored loss convergence and mAP50 / mAP50-95.
+• Trained Stage 2 disease classification models across cropped leaf categories (Powdery Mildew, Bird's Eye Spot, Colletotrichum, Pestalotiopsis, Healthy).
+Standardized automated metric logging and export workflow for reproducible runs.
+Successfully eliminated class-0 background noise and improved canopy localization.
+Achieved high classification accuracy across distinct leaf pathology classes.
+Standardized test-set reporting metrics and eliminated validation set bias.
+Completed 100%
+
+Week 4 (August 24 – August 31)
+• Hardware Assembly: Fitted active cooler onto Raspberry Pi 5, assembled board into protective casing, connected Camera Module 3 Wide to CSI port, and stacked the Raspberry Pi AI HAT via PCIe interface.
+Completed physical hardware assembly with proper thermal cooling and secure HAT seating.
+Completed 100%
+
+Prepared by:
+IKE S. RUSSEL
+
+Endorsed by:
+Prof. Orven E. Llantos, PhD
+
+
+================================================================================
+PROGRESS REPORT
+For the Period of September 2026
+(Gantt Activities: 8. Hardware Fabrication | 9. Model Training & Optimization | 10. Dashboard Development | 11. System Development)
+================================================================================
+
+No. of Week
+Activity
+Remarks
+Status
+
+Week 1 (September 1 – September 7)
+• Hardware Fabrication (Driver Setup): Flashed 64-bit Raspberry Pi OS, configured PCIe Gen 3 interface, and installed HailoRT runtime drivers for the AI HAT.
+• Camera Initialization: Connected and tested Raspberry Pi Camera Module 3 Wide with libcamera / Picamera2 for basic image capture.
+Verified proper hardware detection of Hailo-8L NPU over PCIe bus.
+Confirmed camera video stream feed functionality without hardware conflicts.
+Completed 100%
+
+Week 2 (September 8 – September 14)
+• Model Training & Optimization: Refined Stage 1 detector to single-class Rubber Leaf model and calibrated confidence threshold to conf=0.40 to reduce background false alarms.
+• Model Compilation: Converted trained models to ONNX and compiled baseline weights into Hailo Executable Format (.hef).
+Improved leaf boundary detection and filtered out non-leaf background noise.
+Generated edge-ready compiled models for the Hailo-8L NPU.
+Completed 100%
+
+Week 3 (September 15 – September 21)
+• System Development (Edge Execution): Created initial inference script on Raspberry Pi 5 to run the compiled model on the Hailo NPU.
+• Initial Benchmarking: Verified single-frame leaf inference execution and monitored cooler fan behavior during test runs.
+Successfully executed edge model on the Hailo NPU hardware.
+Confirmed stable operating temperatures under initial computational testing.
+Completed 100%
+
+Week 4 (September 22 – September 30)
+• Dashboard Development (Initial Scaffold): Created basic Flask web interface to display live camera stream feed and preliminary detection bounding box.
+• Enclosure Planning: Measured physical layout dimensions of assembled board, camera, and wiring for prototype enclosure planning.
+Set up basic local web view accessible via browser for bench testing.
+Established layout requirements for subsequent prototype housing.
+Completed 100%
+
+Prepared by:
+IKE S. RUSSEL
+
+Endorsed by:
+Prof. Orven E. Llantos, PhD
+
+
+================================================================================
+PROGRESS REPORT
+For the Period of October 2026
+(Gantt Activities: 10. Dashboard Development | 11. System Development | 12. Hardware Stability Testing)
+================================================================================
+
+No. of Week
+Activity
+Remarks
+Status
+
+Week 1 (October 1 – October 7)
+• System Development (Pipeline Integration): Integrated Stage 1 leaf detector with Stage 2 disease classifier into a unified two-stage script on Raspberry Pi 5.
+• ROI Processing: Implemented automatic cropping of detected leaf bounding boxes to feed directly into the disease classifier.
+Achieved seamless automated transition from leaf detection to disease identification.
+Eliminated need for manual image cropping between stages.
+Completed 100%
+
+Week 2 (October 8 – October 14)
+• System Development (GPS Logging): Connected hardware GPS module (u-blox NEO-M8N via UART) and implemented NMEA sentence reading for location tagging.
+• Inspection Logger: Added automated CSV logging to save date, time, GPS coordinates, and disease prediction per detection.
+Enabled recording of geographic coordinates for infected trees.
+Established automated inspection record logging for field trails.
+Completed 100%
+
+Week 3 (October 15 – October 21)
+• Dashboard Development (UI Completion): Finalized responsive web dashboard layout with diagnosis cards, confidence badges, and live GPS coordinate display.
+• Hotspot Connectivity: Configured Raspberry Pi Wi-Fi hotspot mode to allow direct connection and dashboard viewing from smartphone or tablet.
+Provided user-friendly interface accessible directly from mobile device in the field.
+Ensured dashboard operates standalone without requiring external internet.
+Completed 100%
+
+Week 4 (October 22 – October 31)
+• Hardware Stability Testing (Load & Thermals): Ran continuous inference stress test for 60 minutes to monitor CPU load, memory usage, and board temperature.
+• Latency Recording: Recorded inference latency (ms) and frame rate (FPS) during continuous video processing.
+Confirmed active cooler prevents thermal throttling under prolonged operation.
+Documented baseline edge execution speed and stability under sustained load.
+Completed 100%
+
+Prepared by:
+IKE S. RUSSEL
+
+Endorsed by:
+Prof. Orven E. Llantos, PhD
+
+
+================================================================================
+PROGRESS REPORT
+For the Period of November 2026
+(Gantt Activities: 12. Hardware Stability Testing | 13. System Deployment)
+================================================================================
+
+No. of Week
+Activity
+Remarks
+Status
+
+Week 1 (November 1 – November 7)
+• Hardware Stability Testing (Battery Power): Conducted portable power endurance test using 5V 5A power bank, measuring continuous operational battery life.
+• Handheld Enclosure Assembly: Assembled the board, camera module, and wiring into a handheld field prototype enclosure with mounting bracket.
+Verified prototype runs reliably on battery power for extended field inspections.
+Protected board, connections, and camera inside durable handheld housing.
+Completed 100%
+
+Week 2 (November 8 – November 14)
+• System Deployment (Initial Field Trial): Carried assembled prototype to local rubber tree plantation for initial on-site trial.
+• Live Tree Testing: Performed live handheld scans on standing rubber leaves to test real-time detection in actual farm environment.
+Successfully validated edge prototype operation in real plantation conditions.
+Confirmed camera targeting and handheld scanning ergonomics on live foliage.
+Completed 100%
+
+Week 3 (November 15 – November 21)
+• System Deployment (Lighting & Distance Trials): Tested detection stability under different outdoor lighting (direct midday sun, canopy shade, and overcast conditions).
+• Distance Evaluation: Recorded detection responsiveness across different camera-to-leaf distances (0.5m to 3.0m).
+Determined optimal leaf scanning distance of 0.8m to 1.5m for clear symptom capture.
+Documented prototype detection behavior across natural sunlight variations.
+Completed 100%
+
+Week 4 (November 22 – November 30)
+• System Deployment (Multi-Plot Inspection): Extended trial scans across multiple plantation plots containing healthy leaves and various disease symptoms.
+• Field Data Audit: Verified consistency of saved inspection CSV logs, captured images, and GPS coordinate accuracy under tree canopy.
+Confirmed reliable data logging and image storage across multiple field trial runs.
+Prepared prototype and trial records for formal quality evaluation.
+Completed 100%
+
+Prepared by:
+IKE S. RUSSEL
+
+Endorsed by:
+Prof. Orven E. Llantos, PhD
+
+
+================================================================================
+PROGRESS REPORT
+For the Period of December 2026
+(Gantt Activities: 13. System Deployment | 14. System Evaluation | 15. Thesis Manuscript Writing)
+================================================================================
+
+No. of Week
+Activity
+Remarks
+Status
+
+Week 1 (December 1 – December 7)
+• System Evaluation (Instrument Preparation): Prepared evaluation survey questionnaires based on ISO/IEC 25010 Software Product Quality standards (Functional Suitability, Performance, Usability, Reliability, Portability).
+• PSSUQ Preparation: Prepared Post-Study System Usability Questionnaire (PSSUQ) forms for farmer usability testing.
+Established standardized evaluation metrics and scoring criteria for expert review.
+Prepared participant consent forms and evaluation rubrics.
+Completed 100%
+
+Week 2 (December 8 – December 14)
+• System Evaluation (Expert Evaluation): Administered ISO/IEC 25010 evaluation session with IT specialists, agricultural researchers, and software engineers.
+• System Demonstration: Demonstrated live handheld prototype operation, mobile dashboard, and real-time disease diagnosis to evaluators.
+Collected expert ratings and technical appraisal across ISO/IEC 25010 quality characteristics.
+Received constructive feedback regarding edge performance and diagnostic clarity.
+Completed 100%
+
+Week 3 (December 15 – December 21)
+• System Evaluation (Farmer Usability Testing): Conducted hands-on user testing with rubber farmers and agricultural technicians using the PSSUQ framework.
+• User Task Evaluation: Observed participants operate the device, connect phone to hotspot, scan leaves, and view diagnosis results.
+Gathered usability ratings across System Usefulness, Information Quality, and Interface Quality.
+Confirmed target end-users can operate the handheld diagnostic device independently.
+Completed 100%
+
+Week 4 (December 22 – December 31)
+• System Evaluation (Statistical Analysis): Computed Mean Opinion Scores (MOS), standard deviations, and Cronbach's alpha reliability scores from survey responses.
+• Thesis Manuscript Writing: Commenced Chapter 4 (Results and Discussion) documentation, organizing evaluation survey tables, latency benchmarks, and field findings.
+Validated strong internal consistency and favorable usability ratings across evaluation groups.
+Formally began thesis results writing aligned with Phase V of the research Gantt chart.
+Completed 100%
+
+Prepared by:
+IKE S. RUSSEL
+
+Endorsed by:
+Prof. Orven E. Llantos, PhD
+================================================================================
+END OF PROGRESS REPORTS (AUGUST – DECEMBER 2026)
+================================================================================

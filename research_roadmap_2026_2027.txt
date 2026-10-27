@@ -1,0 +1,178 @@
+================================================================================
+MASTER'S THESIS RESEARCH ROADMAP & PROBABLE ACTIVITIES (2026 - 2027)
+Project: Two-Stage Edge AI System for Rubber Leaf Disease Detection
+Platform: Raspberry Pi 5 + Raspberry Pi AI HAT (Hailo-8L NPU, 13 TOPS)
+Framework: CRISP-DM / ISO-IEC 25010 / PSSUQ
+================================================================================
+
+--------------------------------------------------------------------------------
+EXECUTIVE TIMELINE OVERVIEW
+--------------------------------------------------------------------------------
+Phase 1: August 2026          - Dataset Annotation, Hardware Setup & Core Training
+Phase 2: September-October 2026 - Edge Pipeline Integration, XAI & Benchmarking
+Phase 3: November-December 2026 - Field Testing, Environmental Trials & ISO Eval
+Phase 4: January-March 2027   - Comprehensive Data Analysis & Manuscript Drafting
+Phase 5: April-June 2027      - Thesis Colloquium, Final Defense & Publications
+Phase 6: July-December 2027   - Technopreneurship Deployment, Scaling & IP Filing
+
+================================================================================
+YEAR 2026: SYSTEM OPTIMIZATION, INTEGRATION & FIELD EVALUATION
+================================================================================
+
+[AUGUST 2026] - FOUNDATIONAL PREPARATION & NPU SETUP (COMPLETED)
+--------------------------------------------------------------------------------
+• Week 1: Raw data curation, Roboflow dataset structuring, Stage 1 bounding box 
+          annotations, Stage 2 disease cropping, 70/20/10 split validation.
+• Week 2: Hardware acquisition (Raspberry Pi 5 8GB, active cooler, official casing,
+          Camera Module 3 Wide, 27W 5V/5A power adapter, Hailo-8L AI HAT).
+• Week 3: Cloud GPU model training (Stage 1 YOLO detector 100 epochs, Stage 2 
+          multi-class disease classifier, confusion matrices, test-set metrics).
+• Week 4: Raspberry Pi 5 hardware assembly, 64-bit OS flash, PCIe Gen 3 setup,
+          Hailo driver suite installation, and ONNX-to-HEF compilation.
+
+[SEPTEMBER 2026] - EDGE PIPELINE INTEGRATION & MULTI-MODEL BENCHMARKING
+--------------------------------------------------------------------------------
+• Activity 1: Two-Stage Standalone Integration
+  - Integrate Stage 1 (YOLO leaf detection) and Stage 2 (disease classification)
+    into a unified inference pipeline on Raspberry Pi 5.
+  - Implement dynamic ROI cropping and memory buffer sharing between stages.
+• Activity 2: Hard Negative Mining & Background Noise Suppression
+  - Introduce 100+ background-only images (soil, tree trunks, non-rubber weed)
+    into Stage 1 training to suppress outdoor false positives.
+  - Recalibrate operational confidence threshold (conf = 0.40 - 0.50).
+• Activity 3: Cross-Generational Model Benchmark
+  - Train and compare YOLO generations (YOLOv8, YOLOv9, YOLOv10, YOLO11) and 
+    model sizes (Nano, Small, Medium) across mAP50, mAP50-95, GFLOPs, and params.
+• Activity 4: Local Web Dashboard & Hardware GNSS Geotagging Finalization
+  - Finalize lightweight Flask diagnostic dashboard for local Wi-Fi and mobile hotspot.
+  - Implement and verify hardware GNSS / GPS module integration (u-blox NEO-M8N) 
+    with asynchronous NMEA parsing for precise geospatial field logging.
+
+[OCTOBER 2026] - EXPLAINABLE AI (XAI) VALIDATION & EDGE PROFILING
+--------------------------------------------------------------------------------
+• Activity 1: Explainability & Interpretability Analysis
+  - Generate Grad-CAM, Grad-CAM++, and Eigen-CAM visual saliency heatmaps.
+  - Conduct quantitative perturbation analysis: Most Relevant First (MoRF) 
+    and Least Relevant First (LeRF) area-over-perturbation curve (AOPC).
+• Activity 2: Hardware Edge Profiling Under Continuous Load
+  - Profile end-to-end latency (ms), frame rate (FPS), CPU/RAM utilization,
+    and thermal dissipation on Raspberry Pi 5 with Hailo-8L NPU.
+  - Measure power consumption stability under 5V/5A power delivery.
+• Activity 3: Standalone Research Paper Draft 1
+  - Draft and finalize the research paper: "Beyond Accuracy: Explainability-Driven 
+    Performance Analysis of Deep Learning Models for Rubber Leaf Disease Diagnosis".
+
+[NOVEMBER 2026] - FIELD VALIDATION & ENVIRONMENTAL TESTING
+--------------------------------------------------------------------------------
+• Activity 1: Plantation Field Trials (Mindanao Rubber Plantations)
+  - Deploy handheld edge prototype in local rubber plantations.
+  - Test real-time diagnostic performance on live trees across five disease
+    categories (Powdery Mildew, Bird's Eye Spot, Colletotrichum, Pestalotiopsis).
+• Activity 2: Environmental Stress Testing
+  - Evaluate detection robustness across variable lighting conditions (direct 
+    midday sunlight, canopy shade, overcast, morning glare).
+  - Map distance degradation curves (testing operational ranges: 0.5m to 4.0m).
+• Activity 3: Edge Usability Data Logging
+  - Log field inference failure cases, motion blur sensitivity, and false-positive 
+    triggers for iterative model refinement.
+
+[DECEMBER 2026] - STANDARDIZED QUALITY & USABILITY EVALUATION
+--------------------------------------------------------------------------------
+• Activity 1: ISO/IEC 25010 Software Quality Assessment
+  - Administer structured ISO/IEC 25010 evaluation surveys with IT experts, 
+    software engineers, and agronomists across 8 quality dimensions:
+    (Functional Suitability, Performance Efficiency, Compatibility, Usability,
+     Reliability, Security, Maintainability, Portability).
+• Activity 2: Post-Study System Usability Questionnaire (PSSUQ)
+  - Conduct user testing sessions with agricultural technicians and smallholder 
+    rubber farmers; collect PSSUQ usability and user satisfaction scores.
+• Activity 3: Data Consolidation & Statistical Synthesis
+  - Compute Mean Opinion Scores (MOS), Cronbach's alpha reliability coefficients, 
+    and usability sub-scale metrics (SysUse, InfoQual, IntQual).
+
+================================================================================
+YEAR 2027: THESIS WRITING, DEFENSE, PUBLICATION & SCALE-UP
+================================================================================
+
+[JANUARY 2027] - MANUSCRIPT RESTRUCTURING & RESULTS CHAPTER WRITING
+--------------------------------------------------------------------------------
+• Activity 1: Chapter 3 (Methodology) Harmonization
+  - Document complete two-stage architecture, CRISP-DM iteration cycles, 
+    Hailo NPU hardware-software pipeline, and mathematical formulations.
+• Activity 2: Chapter 4 (Results and Discussion) Construction
+  - Section 4.1: Dataset Characteristics & Annotation Breakdown
+  - Section 4.2: Stage 1 Localization & Benchmark Results (mAP, PR Curves)
+  - Section 4.3: Stage 2 Disease Classification Performance (F1, Conf Matrix)
+  - Section 4.4: XAI Causal Fidelity & Perturbation Metrics (MoRF/LeRF)
+  - Section 4.5: Edge Hardware Latency, FPS, and Power Efficiency
+  - Section 4.6: ISO/IEC 25010 & PSSUQ Empirical Evaluation Results
+
+[FEBRUARY 2027] - FULL THESIS MANUSCRIPT DRAFTING & ADVISER REVIEW
+--------------------------------------------------------------------------------
+• Activity 1: Complete Manuscript Compilation (LaTeX)
+  - Finalize Chapter 1 (Introduction, Problem Statement, Objectives, PPSQ).
+  - Integrate Chapter 2 (Systematic Literature Review of 18 peer-reviewed papers).
+  - Finalize Chapter 5 (Summary of Findings, Conclusions, and Recommendations).
+  - Compile Appendices (Questionnaires, Datasheets, Statistical Tables, Gantt Chart).
+• Activity 2: Adviser Review & Revisions Loop
+  - Submit complete draft to thesis adviser; conduct iterative revisions.
+  - Perform similarity index checking (Turnitin) and citation verification.
+
+[MARCH 2027] - PRE-DEFENSE COLLOQUIUM & COMMITTEE CLEARANCE
+--------------------------------------------------------------------------------
+• Activity 1: Pre-Oral Defense Presentation
+  - Present research findings before the departmental graduate committee.
+  - Incorporate committee feedback on statistical tests, formatting, and analysis.
+• Activity 2: Live Prototype Demonstration Preparation
+  - Prepare standalone Raspberry Pi 5 + Hailo AI HAT live demonstration kit 
+    with real-time video stream and diagnostic GUI for the panel.
+• Activity 3: Official Defense Application
+  - Submit revised manuscript and secure formal approval for final thesis defense.
+
+[APRIL 2027] - FINAL ORAL THESIS DEFENSE
+--------------------------------------------------------------------------------
+• Activity 1: Final Oral Defense Execution
+  - Deliver comprehensive thesis defense presentation (20-30 minutes).
+  - Demonstrate live edge AI disease detection on Raspberry Pi hardware.
+  - Defend technical contributions, XAI findings, and field usability metrics.
+• Activity 2: Post-Defense Revisions
+  - Address panel recommendations, minor edits, and structural refinements.
+  - Obtain formal signature endorsements from panel members and dean.
+
+[MAY - JUNE 2027] - FINAL SUBMISSION & PEER-REVIEWED JOURNAL PUBLICATION
+--------------------------------------------------------------------------------
+• Activity 1: Final Institutional Archival
+  - Bind hardbound thesis copies and submit digital institutional repository copy.
+• Activity 2: Primary Journal Paper Submission (Q1 / Scopus / IEEE / Springer)
+  - Prepare journal manuscript: "Two-Stage Explainable Edge AI System for Real-Time 
+    Rubber Tree Disease Diagnosis on Neuromorphic Hardware".
+  - Submit to targeted high-impact agricultural AI journal (e.g., Computers and 
+    Electronics in Agriculture / Smart Agricultural Technology).
+• Activity 3: Conference Paper Presentation
+  - Present research at targeted IEEE / International Computer Science Conference.
+
+[JULY - SEPTEMBER 2027] - INTELLECTUAL PROPERTY & TECHNOPRENEURSHIP
+--------------------------------------------------------------------------------
+• Activity 1: Intellectual Property (IP) Filing
+  - File software copyright for the two-stage edge diagnostic application.
+  - File utility model / patent for the portable edge AI diagnostic housing & system.
+• Activity 2: Technopreneurship Scaling ("GUMA-gaan" Project)
+  - Refine business model canvas (BMC) and value proposition for agricultural 
+    cooperatives and local government units (LGUs).
+  - Participate in DOST / Startup acceleration pitching competitions.
+
+[OCTOBER - DECEMBER 2027] - FIELD EXPANSION & GRADUATION
+--------------------------------------------------------------------------------
+• Activity 1: Community Pilot Deployment
+  - Deploy 3-5 standalone edge units with partner rubber farmer cooperatives 
+    in Region IX / Region X / BARMM, Philippines.
+  - Conduct farmer training workshops and monitor long-term diagnostic utility.
+• Activity 2: Final Masters Degree Conferment & Graduation
+  - Fulfill all academic, publication, and institutional graduation requirements.
+• Activity 3: Research Handover & Open Dataset Publication
+  - Publish curated rubber disease benchmark dataset on public repositories 
+    (Kaggle / Roboflow / Zenodo) for academic community access.
+
+================================================================================
+END OF RESEARCH ROADMAP DOCUMENT
+================================================================================

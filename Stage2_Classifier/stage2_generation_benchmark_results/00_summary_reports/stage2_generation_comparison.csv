@@ -1,0 +1,4 @@
+Generation,Architecture,Parameters (M),Weights (.pt) MB,ONNX (MB),Test Accuracy (%),Macro Precision (%),Macro Recall (%),Macro F1-Score (%),Wtd F1-Score (%),GPU Latency (ms),Train Time (min)
+yolov8n-cls,YOLOv8 (2023 - C2f Classifier),1.44,2.83,5.52,94.59,95.32,93.09,93.99,94.5,2.51,5.3
+yolo11n-cls,YOLO11 (2024 - C3k2 Spatial Attention),1.53,3.04,5.88,94.24,93.7,93.59,93.65,94.24,4.13,12.3
+yolo26n-cls,YOLO26 (2026 - Next-Gen Edge Classifier),1.53,3.04,5.88,94.24,93.76,93.65,93.7,94.23,3.9,11.3

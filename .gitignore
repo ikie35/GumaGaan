@@ -1,0 +1,46 @@
+# Python byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Temporary upload files and live captures (keep directory structure via .gitkeep)
+uploads/*
+!uploads/.gitkeep
+captures/*
+!captures/.gitkeep
+
+# Field trial raw image frames & cropped lesion dumps
+logs/field_trials/raw_frames/*
+!logs/field_trials/raw_frames/.gitkeep
+logs/field_trials/crops/*
+!logs/field_trials/crops/.gitkeep
+
+# YOLO / Ultralytics runtime outputs
+runs/
+
+# LaTeX auxiliary build files
+*.aux
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.fls
+*.fdb_latexmk
+
+# IDE and OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.tmp
+
+# Local testing and scratch files
+scratch/

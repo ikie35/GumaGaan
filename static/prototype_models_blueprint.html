@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Two-Stage Rubber Leaf Disease Diagnostic Hardware Prototypes</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #10b981;
+      --accent-light: #34d399;
+      --brand: #3b82f6;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 2rem 1rem;
+    }
+    .header {
+      max-width: 1200px;
+      margin: 0 auto 2.5rem;
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-light);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, #fff 40%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p.subtitle {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 2rem;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1rem;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+    }
+    .card-graphic {
+      background: radial-gradient(circle at center, #1e293b 0%, #0b1120 100%);
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--card-border);
+      min-height: 320px;
+    }
+    .card-body {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+    .model-tag {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      font-size: 1.35rem;
+      margin-bottom: 0.75rem;
+      color: #fff;
+    }
+    .specs-list {
+      list-style: none;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    .specs-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.35rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .specs-list li span.label {
+      color: var(--text-muted);
+    }
+    .specs-list li span.val {
+      font-weight: 600;
+      color: #e2e8f0;
+      text-align: right;
+    }
+    .features {
+      margin-top: auto;
+      padding-top: 1rem;
+    }
+    .pill {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      background: rgba(255,255,255,0.06);
+      border-radius: 4px;
+      font-size: 0.78rem;
+      margin: 0.2rem;
+      color: #cbd5e1;
+    }
+    svg text {
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="badge">Master's Thesis Engineering Blueprint</div>
+    <h1>Two-Stage Edge AI Diagnostic Hardware Prototypes</h1>
+    <p class="subtitle">
+      Three physical prototype designs engineered for Raspberry Pi 5 + Hailo-8L AI HAT+ (13 TOPS) + Sony IMX708 PDAF + u-blox NEO-M8N GNSS for Rubber Leaf Disease detection (PLFD).
+    </p>
+  </div>
+
+  <div class="grid">
+    <!-- MODEL 1 -->
+    <div class="card">
+      <div class="card-graphic">
+        <svg viewBox="0 0 320 320" width="100%" height="280">
+          <!-- GNSS Dome -->
+          <path d="M 120 40 Q 160 20 200 40 L 195 55 L 125 55 Z" fill="#38bdf8" opacity="0.8"/>
+          <text x="160" y="38" font-size="9" fill="#0f172a" text-anchor="middle" font-weight="bold">GNSS ANTENNA</text>
+          
+          <!-- Camera Head -->
+          <rect x="110" y="55" width="100" height="45" rx="8" fill="#334155" stroke="#64748b" stroke-width="2"/>
+          <circle cx="160" cy="77" r="14" fill="#0f172a" stroke="#10b981" stroke-width="3"/>
+          <circle cx="160" cy="77" r="6" fill="#38bdf8"/>
+          <!-- Flash LEDs -->
+          <circle cx="128" cy="77" r="4" fill="#fef08a"/>
+          <circle cx="192" cy="77" r="4" fill="#fef08a"/>
+          
+          <!-- Swivel Neck -->
+          <rect x="145" y="100" width="30" height="15" fill="#475569"/>
+          
+          <!-- Main Body (Pi 5 + Hailo + Screen) -->
+          <rect x="90" y="115" width="140" height="95" rx="10" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+          <!-- Active Cooler Vent Grill -->
+          <line x1="100" y1="130" x2="140" y2="130" stroke="#64748b" stroke-width="3"/>
+          <line x1="100" y1="138" x2="140" y2="138" stroke="#64748b" stroke-width="3"/>
+          <line x1="100" y1="146" x2="140" y2="146" stroke="#64748b" stroke-width="3"/>
+          
+          <!-- 5" Screen Bezel on Rear -->
+          <rect x="150" y="125" width="70" height="75" rx="4" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="185" y="160" font-size="9" fill="#10b981" text-anchor="middle">5.0" HUD</text>
+          <text x="185" y="175" font-size="8" fill="#94a3b8" text-anchor="middle">LIVE 28 FPS</text>
+          
+          <!-- Ergonomic Pistol Grip Handle -->
+          <path d="M 135 210 L 125 290 Q 125 305 145 305 L 175 305 Q 190 305 185 290 L 170 210 Z" fill="#334155" stroke="#475569" stroke-width="2"/>
+          <!-- Trigger Switch -->
+          <path d="M 125 230 Q 110 240 123 250 Z" fill="#ef4444"/>
+          <text x="95" y="243" font-size="9" fill="#ef4444" font-weight="bold">TRIGGER</text>
+          
+          <!-- Tripod Mount Thread at Base -->
+          <rect x="145" y="305" width="30" height="8" fill="#eab308" rx="2"/>
+          <text x="160" y="312" font-size="7" fill="#000" text-anchor="middle" font-weight="bold">1/4"-20</text>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="model-tag">Model 1: Handheld Unit</div>
+        <h2>AgroWand-5 (Integrated Scanner)</h2>
+        <p style="font-size: 0.9rem; color: #94a3b8;">
+          All-in-one ergonomic pistol-grip diagnostic device. Ideal for nurseries, lower-canopy surveying, and seedling disease staging.
+        </p>
+        <ul class="specs-list">
+          <li><span class="label">Operating Mode:</span> <span class="val">One-handed Point & Shoot</span></li>
+          <li><span class="label">Weight:</span> <span class="val">~620 grams (with battery)</span></li>
+          <li><span class="label">Display:</span> <span class="val">5.0" DSI Touchscreen (Rear)</span></li>
+          <li><span class="label">Power Source:</span> <span class="val">Internal 10,000 mAh PD Grip</span></li>
+          <li><span class="label">Optics:</span> <span class="val">IMX708 PDAF (±45° Swivel)</span></li>
+          <li><span class="label">Enclosure:</span> <span class="val">Unibody PETG / ASA (IP54)</span></li>
+        </ul>
+        <div class="features">
+          <span class="pill">Fast Sampling</span>
+          <span class="pill">Hardware Shutter</span>
+          <span class="pill">Zero Snag Risk</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODEL 2 -->
+    <div class="card">
+      <div class="card-graphic">
+        <svg viewBox="0 0 320 320" width="100%" height="280">
+          <!-- Top Canopy Sensor Pod -->
+          <rect x="110" y="20" width="100" height="42" rx="6" fill="#334155" stroke="#38bdf8" stroke-width="2"/>
+          <!-- Sky GPS Dome -->
+          <circle cx="160" cy="20" r="10" fill="#38bdf8"/>
+          <!-- Camera Down/Up Lens -->
+          <circle cx="140" cy="41" r="9" fill="#0f172a" stroke="#10b981" stroke-width="2"/>
+          <circle cx="140" cy="41" r="4" fill="#38bdf8"/>
+          <!-- LED Spot -->
+          <circle cx="180" cy="41" r="5" fill="#fef08a"/>
+          <text x="160" y="58" font-size="8" fill="#cbd5e1" text-anchor="middle">TOP SENSOR POD (3.5m)</text>
+
+          <!-- Telescopic Carbon Fiber Pole -->
+          <rect x="155" y="62" width="10" height="90" fill="#1e293b" stroke="#64748b"/>
+          <!-- Pole Collar Clamps -->
+          <rect x="152" y="85" width="16" height="6" fill="#eab308" rx="1"/>
+          <rect x="152" y="120" width="16" height="6" fill="#eab308" rx="1"/>
+          
+          <!-- Chest Level Compute Hub -->
+          <rect x="90" y="152" width="140" height="75" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+          <rect x="100" y="160" width="120" height="58" rx="4" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="160" y="185" font-size="9" fill="#10b981" text-anchor="middle" font-weight="bold">7.0" CHEST MONITOR</text>
+          <text x="160" y="200" font-size="8" fill="#94a3b8" text-anchor="middle">RPi 5 + Hailo-8L Base Unit</text>
+
+          <!-- Lower Pole Section -->
+          <rect x="155" y="227" width="10" height="50" fill="#1e293b" stroke="#64748b"/>
+
+          <!-- Counterweight Base Battery -->
+          <rect x="120" y="277" width="80" height="30" rx="6" fill="#334155" stroke="#f59e0b" stroke-width="2"/>
+          <text x="160" y="296" font-size="8" fill="#fef08a" text-anchor="middle" font-weight="bold">20,000mAh BASE</text>
+          <!-- Rubber Foot -->
+          <rect x="145" y="307" width="30" height="6" fill="#000" rx="2"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="model-tag">Model 2: Canopy Extension</div>
+        <h2>CanopyReach (Telescopic Rig)</h2>
+        <p style="font-size: 0.9rem; color: #94a3b8;">
+          Modular 4-meter telescopic carbon-fiber pole system for sampling high crowns where Pestalotiopsis initiates defoliation.
+        </p>
+        <ul class="specs-list">
+          <li><span class="label">Operating Mode:</span> <span class="val">High-Canopy Reaching (up to 4.5m)</span></li>
+          <li><span class="label">Weight (Head):</span> <span class="val">&lt; 95 grams (no bend)</span></li>
+          <li><span class="label">Display:</span> <span class="val">7.0" Screen at Chest Height</span></li>
+          <li><span class="label">Counterweight:</span> <span class="val">Battery pack mounted at base</span></li>
+          <li><span class="label">GPS Reception:</span> <span class="val">Highest (elevated above brush)</span></li>
+          <li><span class="label">Materials:</span> <span class="val">Carbon Fiber Tube + 3D Mounts</span></li>
+        </ul>
+        <div class="features">
+          <span class="pill">Mature Crowns</span>
+          <span class="pill">Ladder-Free</span>
+          <span class="pill">Superior GPS</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODEL 3 -->
+    <div class="card">
+      <div class="card-graphic">
+        <svg viewBox="0 0 320 320" width="100%" height="280">
+          <!-- Wand Unit (Left) -->
+          <rect x="25" y="50" width="80" height="150" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+          <!-- Lens -->
+          <circle cx="65" cy="80" r="14" fill="#0f172a" stroke="#10b981" stroke-width="2"/>
+          <circle cx="65" cy="80" r="6" fill="#38bdf8"/>
+          <!-- 3.5" OLED Screen -->
+          <rect x="35" y="105" width="60" height="45" rx="3" fill="#0f172a" stroke="#64748b"/>
+          <text x="65" y="130" font-size="7" fill="#38bdf8" text-anchor="middle">3.5" OLED</text>
+          <!-- Wand Grip -->
+          <path d="M 50 200 L 50 270 Q 50 280 65 280 Q 80 280 80 270 L 80 200 Z" fill="#334155"/>
+          <circle cx="65" cy="215" r="5" fill="#ef4444"/>
+          <text x="65" y="295" font-size="8" fill="#34d399" text-anchor="middle" font-weight="bold">LIGHT WAND (~190g)</text>
+
+          <!-- Umbilical Cable -->
+          <path d="M 65 280 Q 90 310 140 270 T 210 240" fill="none" stroke="#eab308" stroke-width="4" stroke-dasharray="2,2"/>
+          <text x="140" y="300" font-size="8" fill="#eab308" text-anchor="middle">Flexible Umbilical</text>
+
+          <!-- Hip Pack Unit (Right) -->
+          <rect x="180" y="80" width="120" height="150" rx="12" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
+          <rect x="195" y="95" width="90" height="40" rx="4" fill="#0f172a" stroke="#475569"/>
+          <text x="240" y="118" font-size="9" fill="#f8fafc" text-anchor="middle" font-weight="bold">RPi 5 + Hailo-8L</text>
+          <!-- High-flow fan vent -->
+          <circle cx="240" cy="165" r="18" fill="#334155" stroke="#64748b" stroke-width="2"/>
+          <path d="M 230 165 L 250 165 M 240 155 L 240 175" stroke="#38bdf8" stroke-width="2"/>
+          <!-- Battery in pouch -->
+          <rect x="195" y="195" width="90" height="25" rx="4" fill="#0f172a" stroke="#10b981"/>
+          <text x="240" y="212" font-size="8" fill="#10b981" text-anchor="middle">20,000mAh PD</text>
+          <text x="240" y="250" font-size="8" fill="#38bdf8" text-anchor="middle" font-weight="bold">HIP PACK (~750g)</text>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="model-tag">Model 3: Split Wearable</div>
+        <h2>FieldPack-Edge (Tethered Kit)</h2>
+        <p style="font-size: 0.9rem; color: #94a3b8;">
+          Split-architecture system isolating compute & battery into a hip/chest pack. Eliminates arm fatigue during all-day field surveys.
+        </p>
+        <ul class="specs-list">
+          <li><span class="label">Operating Mode:</span> <span class="val">Continuous plantation walk</span></li>
+          <li><span class="label">In-Hand Wand:</span> <span class="val">~190 grams (Ultra-lightweight)</span></li>
+          <li><span class="label">Display:</span> <span class="val">3.5" OLED on wand handle</span></li>
+          <li><span class="label">Compute & Battery:</span> <span class="val">Worn on waist holster</span></li>
+          <li><span class="label">Battery Runtime:</span> <span class="val">6.0 - 8.0+ continuous hours</span></li>
+          <li><span class="label">Thermal Headroom:</span> <span class="val">Optimal (open pack ventilation)</span></li>
+        </ul>
+        <div class="features">
+          <span class="pill">Zero Fatigue</span>
+          <span class="pill">All-Day Power</span>
+          <span class="pill">Maximum Cooling</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

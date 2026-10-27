@@ -1,0 +1,10 @@
+Generation,Disease Class,Precision (%),Recall (%),F1-Score (%),Test Support
+yolov8n-cls,Healthy,94.68,98.34,96.48,181
+yolov8n-cls,Other Disease,98.17,83.59,90.3,128
+yolov8n-cls,PLFD,93.12,97.35,95.19,264
+yolo11n-cls,Healthy,97.79,97.79,97.79,181
+yolo11n-cls,Other Disease,88.98,88.28,88.63,128
+yolo11n-cls,PLFD,94.34,94.7,94.52,264
+yolo26n-cls,Healthy,97.27,98.34,97.8,181
+yolo26n-cls,Other Disease,89.68,88.28,88.98,128
+yolo26n-cls,PLFD,94.32,94.32,94.32,264

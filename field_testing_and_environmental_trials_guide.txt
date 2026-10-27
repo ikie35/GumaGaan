@@ -1,0 +1,396 @@
+================================================================================
+FIELD TESTING AND ENVIRONMENTAL TRIALS PROTOCOL & OPERATIONAL GUIDE
+Project: Two-Stage Edge AI System for Rubber Leaf Disease Detection
+Platform: Raspberry Pi 5 (8GB) + Raspberry Pi AI HAT (Hailo-8L NPU, 13 TOPS)
+Optics: Dual-Camera Setup (Pi Camera Module 3 Wide IMX708 PDAF + Arducam 16MP IMX519)
+GNSS / Geolocation: u-blox NEO-M8N / NEO-6M Hardware GPS via UART (/dev/ttyAMA0)
+Interface: Local Web Dashboard (Flask/HTML5) + Field HDMI Touchscreen Kiosk Mode
+Models: Stage 1 YOLO Leaf Detector (conf=0.40) + Stage 2 YOLO11n-cls Robust Classifier
+Framework: CRISP-DM / ISO-IEC 25010 / PSSUQ
+Target Location: Rubber Plantations (e.g., Mindanao Rubber Farms)
+================================================================================
+
+--------------------------------------------------------------------------------
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+1. Executive Overview & Objectives
+2. Phase 1: Pre-Field Setup & Hardware/Rig Preparation
+3. Phase 2: Plantation Site Selection, Sampling & Ground-Truth Protocol
+4. Phase 3: Factorial Environmental Stress Trials (Step-by-Step)
+   - Trial 3.1: Lighting & Illumination Invariance Testing
+   - Trial 3.2: Distance Degradation & Operational Range Mapping
+   - Trial 3.3: Foliage Orientation & Camera Angle Variation
+   - Trial 3.4: Dynamic Wind & Motion Blur Sensitivity
+   - Trial 3.5: Complex Background Clutter & Hard Negative Testing
+   - Trial 3.6: Optical Sensor Comparison (Pi Cam 3 Wide PDAF vs. Arducam 16MP)
+   - Trial 3.7: GNSS / GPS Canopy Penetration & Spatial Drift Mapping
+5. Phase 4: Edge Telemetry & Hardware Stress Profiling
+6. Phase 5: Field Data Logging & Comprehensive CSV Schema
+7. Phase 6: Post-Trial Data Analysis & Thesis Metrics
+8. Field Readiness Checklist & Dry-Run Protocol
+
+================================================================================
+1. EXECUTIVE OVERVIEW & OBJECTIVES
+================================================================================
+The primary goal of the field testing and environmental trials is to validate 
+the real-world diagnostic reliability, optical robustness, spatial geotagging 
+precision, and hardware efficiency of the Two-Stage Edge AI system outside the 
+controlled laboratory setting.
+
+Key Objectives:
+  1. Measure Stage 1 (YOLO leaf localization at conf=0.40) and Stage 2 (YOLO11n-cls 
+     disease classification) accuracy under varying natural illumination, distance, 
+     angle, and outdoor background clutter.
+  2. Evaluate dual-sensor optical behavior (Pi Camera 3 PDAF autofocus vs. 
+     Arducam 16MP high-resolution sensor) in macro lesion discrimination.
+  3. Quantify hardware GNSS / GPS geotagging precision, satellite lock stability, 
+     and coordinate drift under dense mature rubber canopy cover.
+  4. Quantify edge hardware performance (FPS, stage-by-stage latency, CPU/NPU 
+     thermal dissipation, and battery power stability) during continuous field operation.
+  5. Log edge failure cases and confusion patterns for iterative model refinement.
+  6. Generate empirical data for Thesis Chapter 4 (Results & Discussion) and 
+     subsequent Q1/Scopus journal manuscript submissions.
+
+Target Disease Classes (3-Class Formulation):
+  - Class 0: Healthy (Healthy Rubber Leaf Control)
+  - Class 1: Other Disease (Foliar Pathogens: Powdery Mildew, Bird's Eye Spot, Colletotrichum, etc.)
+  - Class 2: PLFD (Pestalotiopsis Leaf Fall Disease - Primary Epidemic Target)
+
+================================================================================
+2. PHASE 1: PRE-FIELD SETUP & HARDWARE/RIG PREPARATION
+================================================================================
+
+2.1 Hardware Kit Assembly:
+  • Edge Compute Unit:
+    - Raspberry Pi 5 (8GB RAM) with active cooler and heatsink.
+    - Hailo-8L M.2 AI HAT securely mounted via PCIe Gen 3 interface.
+    - Enclosure / handheld ergonomic field mount with tripod mounting screw.
+  • Optical Camera Subsystems (Dual Setup Supported):
+    - Camera 0 (Primary): Raspberry Pi Camera Module 3 Wide (12MP, IMX708, PDAF autofocus).
+    - Camera 1 (Secondary): Arducam 16MP Autofocus Camera (IMX519 high-resolution).
+    - Dual-camera ribbon cables routed to CAM0 and CAM1 ports with dtoverlays.
+  • GNSS / GPS Geotagging Subsystem:
+    - u-blox NEO-M8N / NEO-6M GNSS module with ceramic patch antenna.
+    - UART connection to 40-pin GPIO header:
+      * VCC -> Pin 2/4 (5V/3.3V)
+      * GND -> Pin 6 (Ground)
+      * TXD -> Pin 10 (GPIO 15 / RXD0)
+      * RXD -> Pin 8  (GPIO 14 / TXD0)
+    - Antenna positioned with unobstructed upward sky view atop the field rig.
+  • Field Display & Human-Machine Interface (HMI):
+    - Option A: Field HDMI Touchscreen / portable monitor booted into automated 
+      Chromium Kiosk Mode (http://localhost:5000).
+    - Option B: Handheld Smartphone / Tablet connected over Pi 5 Wi-Fi Access Point 
+      or mobile hotspot.
+  • Field Power Supply:
+    - USB-PD Power Bank outputting 27W (5V/5A or 9V/3A) to eliminate low-power CPU/NPU 
+      throttling under heavy Hailo-8L inference load.
+    - Spare secondary power bank for extended 4+ hour continuous field operation.
+  • Measurement & Verification Tools:
+    - Digital Lux Meter for exact ambient illumination measurements.
+    - Laser Distance Measurer / 5-meter measuring tape for precise distance steps.
+    - Infrared Non-Contact Thermometer to measure ambient and device heatsink temperatures.
+    - Weather-resistant physical plant tags / numbered clip labels (001 to 250).
+    - Portable reference color card / gray card for white-balance verification.
+
+2.2 Software Pre-Flight Checks:
+  • Edge AI Runtime & Models:
+    - Verify Stage 1 ONNX / HEF (`stage1_leaf_detector.hef` / `best.pt`) at conf=0.40.
+    - Verify Stage 2 YOLO11n-cls (`yolo11n_robust_best.hef` / `yolo11n_robust_best.pt`).
+    - Verify offline mode (`YOLO_OFFLINE=True`, `HAILO_OFFLINE=True`).
+  • Camera Subsystem Verification:
+    - Confirm camera detection via `rpicam-hello --list-cameras`.
+    - Verify dual stream using `libcamerify python app.py`.
+  • GNSS Serial Receiver Verification:
+    - Verify UART stream via `cat /dev/ttyAMA0` (confirm live $GNRMC / $GNGGA sentences).
+    - Test telemetry endpoint: `curl http://localhost:5000/api/gps`.
+  • Storage & Logging Directories:
+    - Ensure field logging directories exist on Pi 5:
+      `/logs/field_trials/raw_frames`, `/logs/field_trials/stage1_crops`, `/logs/field_trials/telemetry_csv`.
+
+================================================================================
+3. PHASE 2: PLANTATION SAMPLING & GROUND-TRUTH PROTOCOL
+================================================================================
+
+3.1 Tree & Clone Stratification:
+  • Target commercial rubber clones (e.g., RRIM 600, PB 260, USM 1, or regional varieties).
+  • Sample leaves across three vertical canopy strata:
+    - Lower Canopy (older, hardened leaves, prone to shade and soil splash).
+    - Middle Canopy (active photosynthetic leaves, standard field inspection height).
+    - Upper / Young Flush Shoots (tender reddish-brown to light green leaves, 
+      frequently targeted by Powdery Mildew and Colletotrichum).
+
+3.2 Sample Size Target:
+  • Target: 60–80 unique samples per class across the 3 target classes:
+    - Healthy (Control)
+    - Other Disease (Foliar Pathogens)
+    - PLFD (Pestalotiopsis Leaf Fall Disease)
+  • Total Sample Target: N = 180 to 240 tagged sample points.
+
+3.3 Ground-Truth Verification Workflow:
+  1. Identify a candidate leaf exhibiting suspected symptoms (or healthy control).
+  2. Fasten a numbered physical weather-resistant tag to the petiole/branch.
+  3. Capture a high-resolution reference photo using a DSLR / smartphone camera.
+  4. Have a certified Plant Pathologist / Agronomist examine the leaf and record:
+     - Confirmed Diagnosis (Ground-Truth Class).
+     - Severity Level (Early / Mild / Severe).
+     - Presence of co-infections / secondary saprophytic fungi.
+  5. Acquire hardware GNSS / GPS coordinates (latitude, longitude, altitude, satellite count) 
+     from the edge device to establish exact spatial geotagging for plantation mapping.
+  6. Log the physical Tag ID against the system's Edge Sample ID and GPS telemetry.
+
+================================================================================
+4. PHASE 3: FACTORIAL ENVIRONMENTAL STRESS TRIALS (STEP-BY-STEP)
+================================================================================
+
+--------------------------------------------------------------------------------
+TRIAL 3.1: LIGHTING & ILLUMINATION INVARIANCE TESTING
+--------------------------------------------------------------------------------
+Objective: Evaluate detection and classification robustness across extreme natural
+illumination changes commonly encountered in rubber plantations.
+
+Test Matrix:
++------------------------+-------------------+---------------------+-----------------------------------+
+| Condition              | Time of Day       | Lux Range (lx)      | Key Focus Area                    |
++------------------------+-------------------+---------------------+-----------------------------------+
+| 1. Direct Midday Sun   | 11:30 AM - 1:30 PM| > 50,000 lx         | Specular glare, washed-out colors |
+| 2. Canopy Shade        | Any daytime       | 2,000 - 10,000 lx   | Diffuse light, low shadow contrast|
+| 3. Morning/Late Glare  | 7:00-8:30 / 4:30  | 5,000 - 15,000 lx   | High directional shadow & flare   |
+| 4. Overcast / Cloudy   | Cloudy / Pre-rain | 1,000 - 5,000 lx    | Low-contrast lesion textures      |
++------------------------+-------------------+---------------------+-----------------------------------+
+
+Procedure:
+  1. Fix inspection distance to 1.0 meter (perpendicular 90 deg angle).
+  2. For each tagged leaf, record ambient light level using the Lux meter.
+  3. Trigger edge inference and save raw frame + geotagged telemetry.
+  4. Repeat across at least 3 distinct lighting conditions for the same sample leaf.
+
+--------------------------------------------------------------------------------
+TRIAL 3.2: DISTANCE DEGRADATION & OPERATIONAL RANGE MAPPING
+--------------------------------------------------------------------------------
+Objective: Determine the effective operational range and the degradation curve 
+where detection recall drops below acceptable thresholds.
+
+Test Matrix:
++-------------------+--------------------------------------------------------------------+
+| Distance Step     | Purpose & Expected Behavior                                        |
++-------------------+--------------------------------------------------------------------+
+| 0.5 meter         | Macro / Close-up view; high resolution lesion texture; tight crop. |
+| 1.0 meter         | Primary operational baseline; handheld standard inspection range.  |
+| 1.5 meters        | Intermediate distance; testing multi-leaf detection within FOV.    |
+| 2.0 meters        | Medium range; lesion spatial resolution begins degrading.          |
+| 3.0 meters        | Stress boundary; small lesions occupy < 15x15 pixel regions.       |
+| 4.0 meters        | Extreme boundary; establish maximum effective cutoff range.        |
++-------------------+--------------------------------------------------------------------+
+
+Procedure:
+  1. Mount the edge camera unit on a tripod aligned with the tagged target leaf.
+  2. Use the laser measurer to position the camera precisely at 0.5m, 1.0m, 1.5m, 
+     2.0m, 3.0m, and 4.0m.
+  3. Execute 3 consecutive inference runs at each distance step.
+  4. Record Stage 1 bounding box confidence, bounding box coordinates, and Stage 2 
+     classification confidence.
+
+--------------------------------------------------------------------------------
+TRIAL 3.3: FOLIAGE ORIENTATION & CAMERA ANGLE VARIATION
+--------------------------------------------------------------------------------
+Objective: Test perspective distortion invariance and non-planar leaf geometry.
+
+Test Configurations:
+  • Orthogonal (90 deg): Camera optical axis perpendicular to leaf lamina.
+  • Oblique Tilt (45 deg): Camera angled from bottom-up (scanning canopy from ground).
+  • Oblique Side (45 deg): Camera angled from left or right edge.
+  • Natural Curled / Deformed Leaves: Disease-wilted leaves with 3D curvature.
+
+Procedure:
+  1. Set distance to 1.0m.
+  2. Rotate camera mount to 90 deg, +45 deg tilt, and -45 deg side angle.
+  3. Capture inferences and evaluate whether perspective deformation degrades 
+     lesion classification or Stage 1 bounding box IoU.
+
+--------------------------------------------------------------------------------
+TRIAL 3.4: DYNAMIC WIND & MOTION BLUR SENSITIVITY
+--------------------------------------------------------------------------------
+Objective: Quantify the effect of wind-induced leaf flutter and camera operator 
+hand tremor on autofocus accuracy and diagnostic confidence.
+
+Test Matrix:
+  • Level 0 (Still / Static): Wind speed < 1 m/s (baseline control).
+  • Level 1 (Moderate Flutter): Wind speed 2 - 4 m/s (natural plantation breeze).
+  • Level 2 (High Agitation / Walking Handheld Scan): Simulated walking motion.
+
+Procedure:
+  1. Record video / live inference stream while target leaf flutters in the wind.
+  2. Monitor Camera Module 3 Phase Detection Autofocus (PDAF) response time.
+  3. Measure the rate of blurred frames and their impact on classification confidence.
+
+--------------------------------------------------------------------------------
+TRIAL 3.5: COMPLEX BACKGROUND CLUTTER & HARD NEGATIVE MINING
+--------------------------------------------------------------------------------
+Objective: Measure false-positive trigger rate on non-target agricultural backgrounds.
+
+Background Clutter Scenarios:
+  1. Soil and decaying leaf litter background.
+  2. Rough tree trunk bark (Hevea brasiliensis bark textures).
+  3. Non-rubber intercropped flora, broadleaf weeds, and grass.
+  4. Dense cluster of overlapping healthy rubber leaves behind the target leaf.
+
+Procedure:
+  1. Position camera pointing at background-only targets without disease symptoms.
+  2. Record any spurious bounding boxes generated by Stage 1 (calibrated at conf=0.40).
+  3. Log false positives for future hard-negative mining retraining.
+
+--------------------------------------------------------------------------------
+TRIAL 3.6: OPTICAL SENSOR COMPARISON (PI CAM 3 PDAF VS. ARDUCAM 16MP)
+--------------------------------------------------------------------------------
+Objective: Compare diagnostic accuracy, field of view, and autofocus lock speed 
+between the standard Raspberry Pi Camera Module 3 Wide (12MP) and Arducam 16MP IMX519.
+
+Test Matrix:
++------------------------+--------------------------------------------------------------+
+| Evaluation Metric      | Comparative Focus Area                                       |
++------------------------+--------------------------------------------------------------+
+| 1. Autofocus Latency   | PDAF (Pi Cam 3) vs Contrast/CDAF Autofocus (Arducam 16MP).   |
+| 2. Lesion Micro-Texture| High-frequency spot detail on Bird's Eye Spot & Colletotrichum|
+| 3. Dynamic Range       | Highlight burnout under direct sun through canopy gaps.      |
+| 4. Processing Overhead | Image capture & buffer transfer time (ms) into inference.    |
++------------------------+--------------------------------------------------------------+
+
+Procedure:
+  1. Fix the rig at 1.0m from a tagged diseased leaf.
+  2. Capture inference on Camera Index 0 (Pi Camera 3).
+  3. Switch to Camera Index 1 (Arducam 16MP) and capture inference on the identical leaf.
+  4. Compare crop clarity, Stage 1 IoU, and Stage 2 classification confidence.
+
+--------------------------------------------------------------------------------
+TRIAL 3.7: GNSS / GPS CANOPY PENETRATION & SPATIAL DRIFT MAPPING
+--------------------------------------------------------------------------------
+Objective: Quantify the accuracy, satellite acquisition time, and spatial coordinate 
+drift of the u-blox NEO-M8N receiver beneath mature Hevea brasiliensis canopy cover.
+
+Test Matrix:
++--------------------------+---------------------+-------------------------------------+
+| Canopy Density Scenario  | Description         | Expected Satellite Metric           |
++--------------------------+---------------------+-------------------------------------+
+| 1. Open Clearing         | Plantation Road     | 8–14 Satellites; Lock < 30 seconds  |
+| 2. Immature Rubber Trees | Light Canopy (<3yr) | 6–10 Satellites; Lock < 60 seconds  |
+| 3. Mature Closed Canopy  | Dense Interlocking  | 4–8 Satellites; Multi-path testing  |
++--------------------------+---------------------+-------------------------------------+
+
+Procedure:
+  1. Record GPS coordinates at a fixed tagged tree continuously for 5 minutes.
+  2. Compute coordinate standard deviation (drift in meters).
+  3. Verify dual-fallback behavior: verify seamless fallback to HTML5 browser 
+     geolocation when hardware GPS is searching or obstructed.
+
+================================================================================
+5. PHASE 4: EDGE TELEMETRY & HARDWARE STRESS PROFILING
+================================================================================
+During a continuous 2-hour uninterrupted field testing session, log hardware 
+telemetry every 30 seconds:
+
+Key Metrics to Record:
+  1. Preprocessing Time (ms): Image resize, normalization, color conversion.
+  2. Stage 1 Inference Latency (ms): YOLO leaf detection on Hailo-8L / CPU.
+  3. Cropping & Buffer Transfer Time (ms): Dynamic ROI extraction.
+  4. Stage 2 Inference Latency (ms): Disease classification on Hailo-8L / CPU.
+  5. End-to-End Latency (ms) & Operational Frame Rate (FPS).
+  6. GNSS Fix Status & Tracking: Active satellites, fix type, coordinate update rate (Hz).
+  7. CPU Temperature (deg C): Extracted via `vcgencmd measure_temp`.
+  8. Thermal Throttling Status: Extracted via `vcgencmd get_throttled`.
+  9. Memory (RAM) Consumption (MB) and CPU Load (%).
+  10. Battery Discharge Profile: Power bank capacity percentage over time.
+
+================================================================================
+6. PHASE 5: FIELD DATA LOGGING & COMPREHENSIVE CSV SCHEMA
+================================================================================
+Every field inference event must append a row to a centralized CSV file 
+(`field_trials_master_log.csv`) with the following column schema:
+
+Column Headers:
+  1.  Timestamp            (ISO-8601: YYYY-MM-DD HH:MM:SS)
+  2.  Session_ID           (Unique session identifier, e.g., SESS_20261115_01)
+  3.  Sample_Tag_ID        (Physical tree tag number, e.g., TAG_042)
+  4.  Tree_Clone           (e.g., RRIM 600, PB 260)
+  5.  Canopy_Level         (Lower / Middle / Upper)
+  6.  Ground_Truth_Class   (Healthy / Other_Disease / PLFD)
+  7.  Disease_Severity     (None / Mild / Moderate / Severe)
+  8.  Lighting_Condition   (Midday_Sun / Canopy_Shade / Morning_Glare / Overcast)
+  9.  Lux_Level_lx         (Numeric, e.g., 8450)
+  10. Distance_meters      (Numeric, e.g., 1.0)
+  11. Angle_degrees        (Numeric, e.g., 90, 45)
+  12. Wind_Condition       (Still / Moderate / High)
+  13. Camera_Sensor        (Pi_Camera_3_Wide / Arducam_16MP)
+  14. GPS_Latitude         (Decimal degrees, e.g., 7.123456)
+  15. GPS_Longitude        (Decimal degrees, e.g., 125.654321)
+  16. GPS_Altitude_m       (Float, e.g., 142.5)
+  17. GPS_Satellites       (Integer, e.g., 9)
+  18. GPS_Fix_Status       (locked / searching / unavailable)
+  19. GPS_Source           (Hardware_NEO-M8N / Mobile_Device_GPS)
+  20. Stage1_Detected      (Boolean: True / False)
+  21. Stage1_Confidence    (Float: 0.00 - 1.00)
+  22. Stage1_BBox_Coords   (String: [x1, y1, x2, y2])
+  23. Stage2_Pred_Class    (Healthy / Other_Disease / PLFD)
+  24. Stage2_Confidence    (Float: 0.00 - 1.00)
+  25. Prediction_Correct   (Boolean: True / False)
+  26. Stage1_Latency_ms    (Float, e.g., 14.2)
+  27. Stage2_Latency_ms    (Float, e.g., 8.7)
+  28. Total_Latency_ms     (Float, e.g., 26.5)
+  29. Measured_FPS         (Float, e.g., 37.7)
+  30. Pi5_CPU_Temp_C       (Float, e.g., 54.3)
+  31. Raw_Image_Path       (Relative filepath)
+  32. Crop_Image_Path      (Relative filepath)
+
+================================================================================
+7. PHASE 6: POST-TRIAL DATA ANALYSIS & THESIS METRICS
+================================================================================
+
+7.1 Stage 1 Localization Evaluation:
+  • Precision, Recall, mAP50, mAP50-95 computed against field-annotated bounding boxes.
+  • Distance Degradation Curve: Plot Detection Rate (%) vs. Distance (0.5m to 4.0m).
+
+7.2 Stage 2 Disease Classification Evaluation:
+  • Multi-Class Confusion Matrix under real-world field conditions.
+  • Macro-Averaged and Per-Class Metrics:
+    - Precision = TP / (TP + FP)
+    - Recall (Sensitivity) = TP / (TP + FN)
+    - F1-Score = 2 * (Precision * Recall) / (Precision + Recall)
+    - Specificity = TN / (TN + FP)
+
+7.3 Environmental Factor Sensitivity Analysis:
+  • Grouped Bar Plots: Accuracy and F1-Score categorized by:
+    - Lighting condition (Midday Sun vs. Canopy Shade vs. Morning Glare vs. Overcast).
+    - Distance intervals (<=1.0m vs. 1.5-2.0m vs. >=3.0m).
+    - Optical Camera Sensor (Pi Camera 3 Wide vs. Arducam 16MP).
+  • Statistical Significance Testing:
+    - Perform One-Way Analysis of Variance (ANOVA) or Kruskal-Wallis test to verify 
+      whether environmental variations cause statistically significant differences 
+      in diagnostic accuracy (p < 0.05).
+
+7.4 Geospatial Disease Epidemiology Analysis:
+  • GIS Scatter & Heatmaps: Plot disease occurrences against GPS latitude/longitude.
+  • Cluster Analysis: Identify high-density infection hotspots across plantation blocks.
+
+7.5 Edge Hardware Profiling Results:
+  • End-to-end latency distribution histogram (Preprocessing, Stage 1, Stage 2, Total).
+  • Time-series thermal stability plot (Pi 5 CPU temperature over 2 hours of continuous load).
+  • Mean Power Drain and estimated field battery autonomy (hours per 10,000mAh).
+
+================================================================================
+8. FIELD READINESS CHECKLIST & DRY-RUN PROTOCOL
+================================================================================
+
+[ ] 1. Raspberry Pi 5 8GB + Hailo-8L HAT fully assembled with active cooler secured.
+[ ] 2. Dual Cameras (Pi Camera 3 PDAF + Arducam 16MP) ribbon cables seated and verified via libcamerify.
+[ ] 3. Hardware GNSS (u-blox NEO-M8N) connected to UART pins (GPIO 14/15) with live fix tested (/api/gps).
+[ ] 4. Field HDMI screen / Kiosk Mode or Wi-Fi hotspot access verified on tablet/smartphone.
+[ ] 5. 27W Power Bank fully charged (100%) + spare power bank ready.
+[ ] 6. Digital Lux Meter and Laser Distance Measurer packed with working batteries.
+[ ] 7. Physical plant tags (001 - 250) and fine-tip permanent markers packed.
+[ ] 8. MicroSD card / NVMe SSD has at least 15 GB free storage for trial logging.
+[ ] 9. Plant pathologist / agricultural technician consultation scheduled for ground truth.
+[ ] 10. Pre-field 15-minute dry run conducted in local orchard to verify auto-logging and GPS geotagging.
+
+================================================================================
+END OF FIELD TESTING AND ENVIRONMENTAL TRIALS PROTOCOL
+================================================================================

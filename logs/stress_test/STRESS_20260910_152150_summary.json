@@ -1,0 +1,22 @@
+{
+  "session_id": "STRESS_20260910_152150",
+  "test_duration_minutes": 60.0,
+  "test_duration_hours": 1.0,
+  "total_inferences_completed": 144487,
+  "average_throughput_fps": 40.14,
+  "latency_ms": {
+    "stage1_mean": 12.19,
+    "stage2_mean": 8.75,
+    "total_mean": 20.94,
+    "total_p50": 20.93,
+    "total_p95": 21.01,
+    "total_p99": 21.11
+  },
+  "thermal_stability": {
+    "min_cpu_temp_c": 55.4,
+    "max_cpu_temp_c": 62.6,
+    "mean_cpu_temp_c": 58.25,
+    "throttle_events_count": 0
+  },
+  "telemetry_csv": "logs/stress_test/STRESS_20260910_152150_telemetry.csv"
+}

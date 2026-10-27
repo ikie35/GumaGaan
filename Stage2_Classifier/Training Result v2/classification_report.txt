@@ -1,0 +1,15 @@
+DETAILED CLASSIFICATION REPORT
+============================================================
+               precision    recall  f1-score   support
+
+      Healthy     0.9412    0.9697    0.9552       297
+Other Disease     0.9667    0.8488    0.9039       205
+         PLFD     0.9328    0.9652    0.9487       460
+
+     accuracy                         0.9418       962
+    macro avg     0.9469    0.9279    0.9359       962
+ weighted avg     0.9426    0.9418    0.9412       962
+============================================================
+Macro Precision: 94.6872%
+Macro Recall:    92.7898%
+Macro F1-Score:  93.5946%

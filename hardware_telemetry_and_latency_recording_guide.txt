@@ -1,0 +1,283 @@
+================================================================================
+  EDGE HARDWARE TELEMETRY & INFERENCE LATENCY RECORDING GUIDE
+  Master's Research: Two-Stage Pestalotiopsis Leaf Fall Disease (PLFD) Detection
+  Hardware Platform: Raspberry Pi 5 + Hailo-8L NPU + Pi Camera Module 3 Wide
+================================================================================
+
+TABLE OF CONTENTS:
+  1. Overview & Research Significance
+  2. Method 1: Automated In-App Latency & GPS Logging (Standard Workflow)
+  3. Method 2: Continuous Background Hardware & Thermal Stress Logger
+  4. Method 3: Standalone Model Benchmark (Hailo-8L NPU vs. CPU Baseline)
+  5. Thesis Visualizations & Metrics Extraction
+  6. Field-Day Quick Execution Checklist
+
+================================================================================
+1. OVERVIEW & RESEARCH SIGNIFICANCE
+================================================================================
+For an Edge AI Master's thesis, proving that your models run efficiently on embedded 
+hardware (Raspberry Pi 5 + Hailo-8L NPU) under field conditions is essential.
+
+You must collect two primary streams of hardware data:
+  A. Per-Inference Latency Breakdown:
+     - Stage 1 Leaf Detection Latency (ms)
+     - Cropping & Memory Buffer Latency (ms)
+     - Stage 2 Disease Classification Latency (ms)
+     - Total End-to-End Pipeline Latency (ms) & Operational FPS
+  
+  B. System & Thermal Telemetry (Under Tropical Field Heat):
+     - Pi 5 CPU & Hailo NPU Temperatures (°C)
+     - Thermal Throttling Status (`vcgencmd get_throttled`)
+     - Memory (RAM) Consumption (MB) and CPU Core Utilization (%)
+
+================================================================================
+2. METHOD 1: AUTOMATED IN-APP LATENCY & GPS LOGGING (STANDARD WORKFLOW)
+================================================================================
+Your Flask deployment application (`raspi_deploy/app.py`) has automated logging 
+built directly into the inference pipeline. Every time you capture or upload a 
+sample in the Web UI, all metrics are automatically measured and saved.
+
+--------------------------------------------------------------------------------
+2.1 How to Start the System on the Raspberry Pi 5:
+--------------------------------------------------------------------------------
+1. SSH or connect to the Pi 5 terminal:
+     cd ~/Two_stage_Rubber_Disease/raspi_deploy
+
+2. Launch the application with camera wrapper:
+     libcamerify python3 app.py
+
+3. Open the Web UI on your smartphone / tablet / laptop:
+     http://<PI_IP_ADDRESS>:5000   (or http://192.168.4.1:5000 on Pi Hotspot)
+
+--------------------------------------------------------------------------------
+2.2 What the System Records Automatically:
+--------------------------------------------------------------------------------
+When you click "Capture & Analyze":
+  • Stage 1 Detection Time (`Stage1_Latency_ms`) is measured via high-resolution timer.
+  • Crop extraction and buffer transfer time is tracked.
+  • Stage 2 Classification Time (`Stage2_Latency_ms`) is measured per leaf ROI.
+  • GPS Latitude, Longitude, Altitude, and Satellite Count are fetched from NEO-M8N.
+  • Raw full frame and cropped leaf images are saved to `logs/field_trials/`.
+  • A new row is appended to:
+      `logs/field_trials/field_trials_master_log.csv`
+
+--------------------------------------------------------------------------------
+2.3 How to Download the Master CSV:
+--------------------------------------------------------------------------------
+  • Option A (Via Browser): Open `http://<PI_IP_ADDRESS>:5000/api/field_trials/csv`
+  • Option B (Via Terminal/SCP):
+      scp pi@<PI_IP>:~/Two_stage_Rubber_Disease/raspi_deploy/logs/field_trials/field_trials_master_log.csv ./
+
+================================================================================
+3. METHOD 2: CONTINUOUS BACKGROUND HARDWARE & THERMAL STRESS LOGGER
+================================================================================
+To record hardware thermal behavior under direct plantation sun during a continuous 
+1–2 hour field trial session, run a background telemetry script alongside `app.py`.
+
+--------------------------------------------------------------------------------
+3.1 Telemetry Logger Script (`log_telemetry.py`):
+--------------------------------------------------------------------------------
+Create this script on your Pi (`nano log_telemetry.py`):
+
+```python
+#!/usr/bin/env python3
+"""
+Continuous Hardware & Thermal Telemetry Logger for Raspberry Pi 5
+Saves timestamp, CPU temperature, throttling status, CPU usage, and RAM usage.
+"""
+import os
+import time
+import subprocess
+import csv
+from datetime import datetime
+
+LOG_FILE = "hardware_telemetry_log.csv"
+INTERVAL_SECONDS = 10  # Log every 10 seconds
+
+def get_cpu_temp():
+    try:
+        res = subprocess.check_output(["vcgencmd", "measure_temp"]).decode("utf-8")
+        return float(res.replace("temp=", "").replace("'C\n", "").strip())
+    except Exception:
+        # Fallback to sysfs thermal zone
+        try:
+            with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+                return round(float(f.read().strip()) / 1000.0, 1)
+        except Exception:
+            return None
+
+def get_throttled_state():
+    try:
+        res = subprocess.check_output(["vcgencmd", "get_throttled"]).decode("utf-8")
+        raw_val = res.strip().split("=")[-1]
+        code = int(raw_val, 16)
+        is_throttled = bool(code & 0x4) or bool(code & 0x8)  # Active throttling
+        has_throttled = bool(code & 0x40000) or bool(code & 0x80000) # Past throttling
+        return f"{raw_val} (Active:{is_throttled}, Past:{has_throttled})"
+    except Exception:
+        return "N/A"
+
+def get_ram_usage_mb():
+    try:
+        res = subprocess.check_output(["free", "-m"]).decode("utf-8").splitlines()
+        mem_row = res[1].split()
+        total_mb = int(mem_row[1])
+        used_mb = int(mem_row[2])
+        return used_mb, total_mb
+    except Exception:
+        return None, None
+
+def get_cpu_load():
+    try:
+        load1, load5, _ = os.getloadavg()
+        return round(load1, 2), round(load5, 2)
+    except Exception:
+        return None, None
+
+def main():
+    print(f"[Telemetry] Starting Hardware Logger -> {LOG_FILE} (Interval: {INTERVAL_SECONDS}s)")
+    file_exists = os.path.exists(LOG_FILE) and os.path.getsize(LOG_FILE) > 0
+    
+    with open(LOG_FILE, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if not file_exists:
+            writer.writerow([
+                "Timestamp", 
+                "CPU_Temp_C", 
+                "Throttled_Status", 
+                "RAM_Used_MB", 
+                "RAM_Total_MB", 
+                "CPU_Load_1min", 
+                "CPU_Load_5min"
+            ])
+            f.flush()
+
+        try:
+            while True:
+                ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                temp = get_cpu_temp()
+                throttled = get_throttled_state()
+                ram_used, ram_total = get_ram_usage_mb()
+                load1, load5 = get_cpu_load()
+                
+                writer.writerow([ts, temp, throttled, ram_used, ram_total, load1, load5])
+                f.flush()
+                print(f"[{ts}] Temp: {temp}°C | Throttle: {throttled} | RAM: {ram_used}/{ram_total}MB | Load: {load1}")
+                time.sleep(INTERVAL_SECONDS)
+        except KeyboardInterrupt:
+            print("\n[Telemetry] Logging stopped by user.")
+
+if __name__ == "__main__":
+    main()
+```
+
+--------------------------------------------------------------------------------
+3.2 How to Run Telemetry in the Background:
+--------------------------------------------------------------------------------
+Run this before starting your plantation testing session:
+  python3 log_telemetry.py &
+
+To stop logging when done:
+  pkill -f log_telemetry.py
+
+================================================================================
+4. METHOD 3: STANDALONE MODEL BENCHMARK (HAILO-8L NPU VS. CPU BASELINE)
+================================================================================
+For your thesis tables, you need a controlled benchmark of 100 warm-up & test runs 
+comparing Hailo-8L NPU vs. Raspberry Pi 5 CPU inference speeds.
+
+--------------------------------------------------------------------------------
+4.1 Benchmark Script (`benchmark_models.py`):
+--------------------------------------------------------------------------------
+```python
+#!/usr/bin/env python3
+"""
+Standalone Benchmark: Measures mean latency and FPS over N iterations.
+"""
+import time
+import numpy as np
+import cv2
+
+def benchmark_pipeline(runs=100):
+    print(f"--- Running {runs} Benchmark Iterations ---")
+    
+    # 1. Generate dummy test image (640x640x3)
+    dummy_frame = np.random.randint(0, 255, (640, 640, 3), dtype=np.uint8)
+    
+    stage1_times = []
+    stage2_times = []
+    total_times = []
+
+    # Warmup runs
+    for _ in range(10):
+        # Trigger model warmup
+        pass
+
+    print("Benchmarking...")
+    for i in range(runs):
+        t0 = time.perf_counter()
+        
+        # Stage 1 Inference
+        t1_start = time.perf_counter()
+        # -> Run Stage 1 Detector here
+        t1_end = time.perf_counter()
+        
+        # Stage 2 Inference (on crop)
+        t2_start = time.perf_counter()
+        # -> Run Stage 2 Classifier here
+        t2_end = time.perf_counter()
+        
+        t_end = time.perf_counter()
+        
+        stage1_times.append((t1_end - t1_start) * 1000.0)
+        stage2_times.append((t2_end - t2_start) * 1000.0)
+        total_times.append((t_end - t0) * 1000.0)
+
+    print("\n========== BENCHMARK RESULTS (N = %d) ==========" % runs)
+    print(f"Stage 1 Mean Latency: {np.mean(stage1_times):.2f} ms ± {np.std(stage1_times):.2f} ms")
+    print(f"Stage 2 Mean Latency: {np.mean(stage2_times):.2f} ms ± {np.std(stage2_times):.2f} ms")
+    print(f"Total Pipeline Time : {np.mean(total_times):.2f} ms ± {np.std(total_times):.2f} ms")
+    print(f"Throughput (FPS)    : {1000.0 / np.mean(total_times):.2f} FPS")
+    print("================================================\n")
+
+if __name__ == "__main__":
+    benchmark_pipeline(runs=100)
+```
+
+================================================================================
+5. THESIS VISUALIZATIONS & METRICS EXTRACTION
+================================================================================
+Once you collect `field_trials_master_log.csv` and `hardware_telemetry_log.csv`, 
+you can generate the following thesis figures using Python (Matplotlib / Seaborn):
+
+1. Latency Breakdown Stacked Bar Chart:
+   - Compares: Preprocessing vs. Stage 1 vs. Crop/ROI vs. Stage 2 Latencies.
+   
+2. Hailo-8L NPU vs. CPU Speedup Chart:
+   - Bar chart showing latency reduction and FPS improvement.
+
+3. Thermal Profile & Temperature Curve:
+   - Line chart showing CPU Temperature (°C) vs. Elapsed Time (Minutes) under 
+     direct sun with active active heatsink cooling.
+
+4. Detection Latency vs. Ambient Lux / Distance:
+   - Scatter/Box plot verifying that inference time remains invariant to lighting 
+     and leaf distance.
+
+================================================================================
+6. FIELD-DAY QUICK EXECUTION CHECKLIST
+================================================================================
+[ ] 1. Power on Raspberry Pi 5 with battery power bank.
+[ ] 2. Start background hardware telemetry logger:
+        python3 log_telemetry.py &
+[ ] 3. Launch main Flask AI service:
+        libcamerify python3 app.py
+[ ] 4. Connect smartphone to Pi 5 Wi-Fi Hotspot and open browser at:
+        http://192.168.4.1:5000
+[ ] 5. Confirm GPS status indicates "locked" with active satellites.
+[ ] 6. For each tagged tree:
+        - Enter Sample Tag ID, Clone, and Canopy Level.
+        - Click "Capture & Analyze".
+        - Verify real-time diagnosis and verify auto-saved confirmation.
+[ ] 7. End of Day: Download `field_trials_master_log.csv` and `hardware_telemetry_log.csv`.
+================================================================================
