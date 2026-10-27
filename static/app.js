@@ -1362,7 +1362,7 @@ document.addEventListener("DOMContentLoaded", () => {
             summaryStatsBadges.innerHTML += `<span class="badge healthy">${healthyCount} Healthy</span>`;
         }
         if (otherCount > 0) {
-            summaryStatsBadges.innerHTML += `<span class="badge warning" style="background-color: #f59e0b; color: #1e293b;">${otherCount} Other</span>`;
+            summaryStatsBadges.innerHTML += `<span class="badge warning">${otherCount} Other</span>`;
         }
         if (plfdCount > 0) {
             summaryStatsBadges.innerHTML += `<span class="badge plfd">${plfdCount} PLFD</span>`;
@@ -1378,7 +1378,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const cardHtml = `
                     <div class="leaf-result-card ignored">
                         <div class="leaf-card-header">
-                            <span class="leaf-index-badge" style="color: var(--text-secondary);">Ignored Object #${leaf.index}</span>
+                            <span class="leaf-index-badge">Ignored Object #${leaf.index}</span>
                             <span class="badge ignored">IGNORED (${(leaf.box.confidence * 100).toFixed(0)}%)</span>
                         </div>
                         <div class="leaf-card-body" style="grid-template-columns: 1fr; padding: 0.8rem 1rem; color: var(--text-secondary); font-size: 0.8rem; line-height: 1.4;">
@@ -1399,36 +1399,36 @@ document.addEventListener("DOMContentLoaded", () => {
             let recIconText = "💡";
             let recTitleText = "Recommendation";
             let recBodyText = "";
-            let colorBorder = "1px solid rgba(255, 255, 255, 0.05)";
+            let colorBorder = "var(--border-medium)";
             
             if (leaf.final_diagnosis === "Healthy") {
                 cardClass = "healthy";
                 recIconText = "🛡️";
                 recTitleText = "Leaf Health Secured";
                 recBodyText = "No signs of Pestalotiopsis Leaf Fall Disease detected. Maintain standard monitoring schedules and good soil drainage.";
-                colorBorder = "4px solid var(--healthy-color)";
+                colorBorder = "var(--status-healthy)";
             } else if (leaf.final_diagnosis === "PLFD") {
                 cardClass = "plfd";
                 recIconText = "⚠️";
                 recTitleText = "Action Required: PLFD Detected";
                 recBodyText = "PLFD identified! Apply systemic fungicides immediately (e.g. hexaconazole or carbendazim). Prune and burn infected leaves to prevent spore drift.";
-                colorBorder = "4px solid var(--diseased-color)";
+                colorBorder = "var(--status-plfd)";
             } else if (leaf.final_diagnosis === "Other Disease") {
                 cardClass = "warning";
                 recIconText = "🍂";
                 recTitleText = "Other Disease or Deficiency Detected";
                 recBodyText = "Signs of non-PLFD leaf spots or nutrient deficiencies detected. Monitor leaf condition and apply general fungicide if symptoms spread.";
-                colorBorder = "4px solid #f59e0b";
+                colorBorder = "var(--status-other)";
             } else {
                 cardClass = "pending";
                 recIconText = "❓";
                 recTitleText = "Stage 2 Diagnosis Pending";
                 recBodyText = "Please complete Stage 2 training using your cropped datasets on Kaggle and place the weights inside the runs/ directory.";
-                colorBorder = "4px solid var(--plfd-color)";
+                colorBorder = "var(--status-other)";
             }
             
             const cardHtml = `
-                <div class="leaf-result-card" style="border-left: ${colorBorder};">
+                <div class="leaf-result-card ${cardClass}" style="border-left-color: ${colorBorder};">
                     <div class="leaf-card-header">
                         <span class="leaf-index-badge">Leaf #${leaf.index} (Detector: ${(leaf.box.confidence * 100).toFixed(0)}%)</span>
                         <span class="badge ${cardClass}">${diagnosisText} (${(leaf.confidence * 100).toFixed(1)}%)</span>
@@ -1454,7 +1454,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                         <span>${(otherVal * 100).toFixed(1)}%</span>
                                     </div>
                                     <div class="progress-bar-bg">
-                                        <div class="progress-bar-fill fill-other" style="width: ${otherVal * 100}%; background-color: #f59e0b;"></div>
+                                        <div class="progress-bar-fill fill-other" style="width: ${otherVal * 100}%"></div>
                                     </div>
                                 </div>
                                 <div class="progress-item">
