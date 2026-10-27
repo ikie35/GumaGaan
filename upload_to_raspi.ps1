@@ -37,6 +37,7 @@ ssh "${PiUser}@${PiIP}" "mkdir -p '$DestDir/static' '$DestDir/templates' '$DestD
 Write-Host "Uploading application core files & stress test suite..." -ForegroundColor Cyan
 scp "$DeployDir/app.py" "${PiUser}@${PiIP}:$DestDir/"
 scp "$DeployDir/raspi_capture.py" "${PiUser}@${PiIP}:$DestDir/"
+scp "$DeployDir/collect_dataset.py" "${PiUser}@${PiIP}:$DestDir/"
 scp "$DeployDir/stress_test.py" "${PiUser}@${PiIP}:$DestDir/"
 scp -r "$DeployDir/static/*" "${PiUser}@${PiIP}:$DestDir/static/"
 scp -r "$DeployDir/templates/*" "${PiUser}@${PiIP}:$DestDir/templates/"

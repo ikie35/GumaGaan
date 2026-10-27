@@ -19,6 +19,13 @@ uploads/*
 captures/*
 !captures/.gitkeep
 
+# Dataset refinement collection images
+dataset_refinement/**/*.jpg
+dataset_refinement/**/*.jpeg
+dataset_refinement/**/*.png
+!dataset_refinement/**/.gitkeep
+*.zip
+
 # Field trial raw image frames & cropped lesion dumps
 logs/field_trials/raw_frames/*
 !logs/field_trials/raw_frames/.gitkeep
