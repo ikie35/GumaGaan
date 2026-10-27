@@ -1,8 +1,11 @@
-# Python byte-compiled / cache files
+# Byte-compiled / cache files
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
 *.pyd
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
 
 # Virtual environments
 venv/
@@ -24,6 +27,7 @@ logs/field_trials/crops/*
 
 # YOLO / Ultralytics runtime outputs
 runs/
+**/runs/
 
 # LaTeX auxiliary build files
 *.aux
