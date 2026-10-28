@@ -13,21 +13,22 @@ echo ""
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICE_NAME="rubber_disease.service"
 SERVICE_PATH="/etc/systemd/system/$SERVICE_NAME"
-VENV_PYTHON="$APP_DIR/venv/bin/python"
-
-echo "[1/6] Validating Directory & Environment..."
-echo "  -> App Path: $APP_DIR"
-if [ ! -f "$VENV_PYTHON" ]; then
-    echo "  [!] Virtual environment not found at $VENV_PYTHON"
-    if command -v python3 &> /dev/null; then
-        VENV_PYTHON="$(which python3)"
-        echo "  -> Falling back to system Python: $VENV_PYTHON"
-    else
-        echo "  [ERROR] No Python found! Aborting."
-        exit 1
-    fi
-else
+VENV_PYTHON=""
+if [ -n "$VIRTUAL_ENV" ] && [ -f "$VIRTUAL_ENV/bin/python" ]; then
+    VENV_PYTHON="$VIRTUAL_ENV/bin/python"
+    echo "  -> Detected active virtualenv: $VENV_PYTHON"
+elif [ -f "$APP_DIR/venv/bin/python" ]; then
+    VENV_PYTHON="$APP_DIR/venv/bin/python"
     echo "  -> Virtual Environment Python verified: $VENV_PYTHON"
+elif [ -f "$HOME/venv/bin/python" ]; then
+    VENV_PYTHON="$HOME/venv/bin/python"
+    echo "  -> Found virtual environment at $VENV_PYTHON"
+elif command -v python3 &> /dev/null; then
+    VENV_PYTHON="$(which python3)"
+    echo "  -> Falling back to system Python: $VENV_PYTHON"
+else
+    echo "  [ERROR] No Python found! Aborting."
+    exit 1
 fi
 
 echo ""
