@@ -49,7 +49,7 @@ class PiCameraWrapper:
             from picamera2 import Picamera2
             print(f"[Camera] Initializing native Picamera2 (camera_id={self.camera_id})...")
             p2 = Picamera2(self.camera_id)
-            config = p2.create_video_configuration(main={"size": (1280, 720), "format": "RGB888"})
+            config = p2.create_video_configuration(main={"size": (1280, 720), "format": "BGR888"})
             p2.configure(config)
             try:
                 # Enable Continuous Autofocus for IMX708 PDAF
@@ -111,8 +111,8 @@ class PiCameraWrapper:
                 frame = self.picam2.capture_array()
                 if frame is not None and frame.size > 0:
                     self.consecutive_failures = 0
-                    if len(frame.shape) == 3 and frame.shape[2] == 3:
-                        return True, cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                    if len(frame.shape) == 3 and frame.shape[2] == 4:
+                        return True, cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
                     return True, frame
             except Exception as e:
                 print(f"[Camera] Picamera2 frame grab error: {e}")
