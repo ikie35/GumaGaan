@@ -8,10 +8,10 @@ Documentation=https://github.com/ikie35/GumaGaan
 Type=simple
 User=ikee
 Group=ikee
-WorkingDirectory=/home/ikee/Two stage Rubber Disease
+WorkingDirectory=/home/ikee/rubber_guard
 # Give camera sensor I2C and Hailo NPU driver time to settle on cold boot
 ExecStartPre=/bin/sleep 2
-ExecStart=/home/ikee/Two stage Rubber Disease/venv/bin/python app.py --host 0.0.0.0 --port 5000
+ExecStart="/home/ikee/rubber_guard/venv/bin/python" app.py --host 0.0.0.0 --port 5000
 Restart=always
 RestartSec=3
 KillSignal=SIGINT

@@ -31,6 +31,18 @@ else
     exit 1
 fi
 
+# Create space-free symlink to prevent systemd argument splitting
+SAFE_DIR="$HOME/rubber_guard"
+ln -sfn "$APP_DIR" "$SAFE_DIR"
+echo "  -> Space-free path created: $SAFE_DIR -> $APP_DIR"
+
+if [ -f "$SAFE_DIR/venv/bin/python" ]; then
+    SAFE_PYTHON="$SAFE_DIR/venv/bin/python"
+else
+    SAFE_PYTHON="$VENV_PYTHON"
+fi
+echo "  -> Executable Python: $SAFE_PYTHON"
+
 echo ""
 echo "[2/6] Probing Camera Hardware (IMX708 / Picamera2)..."
 if command -v rpicam-hello &> /dev/null; then
@@ -52,10 +64,10 @@ Documentation=https://github.com/ikie35/GumaGaan
 Type=simple
 User=$USER
 Group=$USER
-WorkingDirectory=$APP_DIR
+WorkingDirectory=$SAFE_DIR
 # Settle period for MIPI CSI, I2C IMX708 sensor, and Hailo NPU PCIe on boot
 ExecStartPre=/bin/sleep 2
-ExecStart=$VENV_PYTHON app.py --host 0.0.0.0 --port 5000
+ExecStart="$SAFE_PYTHON" app.py --host 0.0.0.0 --port 5000
 Restart=always
 RestartSec=3
 KillSignal=SIGINT
