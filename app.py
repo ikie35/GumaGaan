@@ -43,73 +43,49 @@ class PiCameraWrapper:
         self._init_camera()
 
     def _init_camera(self):
-        # 1. Native Picamera2 (Raspberry Pi OS Bookworm official stack)
+        # 1. Native Picamera2 (Matches IncuVision Raspberry Pi 5 proven configuration)
         try:
             from picamera2 import Picamera2
-            print("[Camera] Attempting native Picamera2 initialization...")
+            print("[Camera] Initializing native Picamera2 (IncuVision mode)...")
             p2 = Picamera2()
+            config = p2.create_video_configuration(main={"size": (1280, 720)})
+            p2.configure(config)
             try:
-                config = p2.create_preview_configuration(
-                    main={"size": (1280, 720), "format": "BGR888"}
-                )
-                p2.configure(config)
-            except Exception:
-                config = p2.create_video_configuration(
-                    main={"size": (1280, 720), "format": "BGR888"}
-                )
-                p2.configure(config)
-                
-            try:
-                # Enable Continuous Autofocus (AfMode 2) for Pi Camera Module 3 IMX708 PDAF
+                # Enable Continuous Autofocus for IMX708 PDAF
                 p2.set_controls({"AfMode": 2})
             except Exception:
                 pass
-                
             p2.start()
-            # Allow sensor auto-exposure, gain, and PDAF to lock
-            time.sleep(0.8)
-            
-            # Retry first frame grab up to 5 times
-            for attempt in range(5):
-                try:
-                    test_frame = p2.capture_array()
-                    if test_frame is not None and test_frame.size > 0:
-                        self.picam2 = p2
-                        self.backend = "picam2"
-                        self.consecutive_failures = 0
-                        print(f"[Camera] Pi Camera Module 3 active via Picamera2 (attempt {attempt+1})! ✅")
-                        return
-                except Exception as frame_err:
-                    print(f"[Camera] Warm-up frame grab {attempt+1}: {frame_err}")
-                time.sleep(0.2)
-                
-            p2.stop()
-            p2.close()
+            time.sleep(0.4)
+            self.picam2 = p2
+            self.backend = "picam2"
+            self.consecutive_failures = 0
+            print("[Camera] SUCCESS: Native Raspberry Pi Camera (Picamera2) initialized! ✅")
+            return
         except Exception as e:
-            print(f"[Camera] Picamera2 init notice: {e}, testing OpenCV fallback...")
+            print(f"[Camera] Picamera2 init error ({e}), testing USB / OpenCV...")
+            self.picam2 = None
 
-        # 2. Try OpenCV VideoCapture with active frame validation
+        # 2. USB Camera via OpenCV
         for cid in [self.camera_id, 0]:
             try:
-                print(f"[Camera] Testing OpenCV VideoCapture (index={cid})...")
-                cap = cv2.VideoCapture(cid)
-                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-                cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                cap = cv2.VideoCapture(cid, cv2.CAP_V4L2)
                 if cap.isOpened():
+                    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+                    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
                     ret, test_frame = cap.read()
                     if ret and test_frame is not None and test_frame.size > 0:
                         self.cap = cap
                         self.backend = "opencv"
                         self.consecutive_failures = 0
-                        print(f"[Camera] Pi Camera active via OpenCV (index={cid})! ✅")
+                        print(f"[Camera] SUCCESS: Pi Camera active via OpenCV (/dev/video{cid})! ✅")
                         return
                     else:
                         cap.release()
             except Exception as e:
-                print(f"[Camera] OpenCV candidate {cid} error: {e}")
+                print(f"[Camera] OpenCV candidate {cid} notice: {e}")
 
-        print("[Camera] WARNING: No active camera device detected or ready yet.")
+        print("[Camera] Notice: Physical camera not detected or busy.")
         self.backend = None
         self.picam2 = None
         self.cap = None
@@ -130,6 +106,8 @@ class PiCameraWrapper:
                 frame = self.picam2.capture_array()
                 if frame is not None and frame.size > 0:
                     self.consecutive_failures = 0
+                    if len(frame.shape) == 3 and frame.shape[2] == 3:
+                        return True, cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
                     return True, frame
             except Exception as e:
                 print(f"[Camera] Picamera2 frame grab error: {e}")
