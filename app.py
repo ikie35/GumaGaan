@@ -49,7 +49,8 @@ class PiCameraWrapper:
             from picamera2 import Picamera2
             print(f"[Camera] Initializing native Picamera2 (camera_id={self.camera_id})...")
             p2 = Picamera2(self.camera_id)
-            config = p2.create_video_configuration(main={"size": (1280, 720), "format": "BGR888"})
+            # libcamera 'RGB888' packs bytes in memory in (B, G, R) order, which matches OpenCV natively without extra color conversions
+            config = p2.create_video_configuration(main={"size": (1280, 720), "format": "RGB888"})
             p2.configure(config)
             try:
                 # Enable Continuous Autofocus for IMX708 PDAF
