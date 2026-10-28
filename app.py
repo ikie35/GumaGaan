@@ -1293,10 +1293,19 @@ def gen_pi_camera_frames(live_detect=False, conf_val=0.15, box_thickness=2, hide
             continue
             
         try:
+            # Ultra-low latency optimization for mobile/tunnel streaming:
+            # Viewfinder uses an efficient 854x480 stream at 55% quality (prevents tunnel queue congestion).
+            # Full 1280x720 pristine resolution is strictly preserved for AI diagnosis and photo snapshots.
+            sh, sw = frame.shape[:2]
+            if sw > 854:
+                preview_frame = cv2.resize(frame, (854, 480), interpolation=cv2.INTER_LINEAR)
+            else:
+                preview_frame = frame
+
             if live_detect:
-                frame = draw_inference_on_frame(frame, conf_val=conf_val, box_thickness=box_thickness, hide_labels=hide_labels)
+                preview_frame = draw_inference_on_frame(preview_frame, conf_val=conf_val, box_thickness=box_thickness, hide_labels=hide_labels)
                 
-            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+            ret, buffer = cv2.imencode('.jpg', preview_frame, [cv2.IMWRITE_JPEG_QUALITY, 55])
             if not ret:
                 continue
                 
@@ -1324,7 +1333,7 @@ def pi_video_feed():
     conf_val = float(request.args.get('conf', 0.15))
     box_thickness = int(request.args.get('box_thickness', 2))
     hide_labels = str(request.args.get('hide_labels', 'false')).lower() in ['true', '1', 'yes']
-    target_fps = int(request.args.get('fps', 30))
+    target_fps = int(request.args.get('fps', 18))
             
     camera_id = None
     if 'camera_id' in request.args:
