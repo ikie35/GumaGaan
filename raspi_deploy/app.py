@@ -1293,19 +1293,19 @@ def gen_pi_camera_frames(live_detect=False, conf_val=0.15, box_thickness=2, hide
             continue
             
         try:
-            # Ultra-low latency optimization for mobile/tunnel streaming:
-            # Viewfinder uses an efficient 854x480 stream at 55% quality (prevents tunnel queue congestion).
-            # Full 1280x720 pristine resolution is strictly preserved for AI diagnosis and photo snapshots.
+            # Ultra-low latency optimization:
+            # 640x360 preview at 50% quality produces ~12KB frames that stream without proxy buffering.
+            # Full native 1280x720 pristine resolution is strictly preserved for AI diagnosis and photo snapshots.
             sh, sw = frame.shape[:2]
-            if sw > 854:
-                preview_frame = cv2.resize(frame, (854, 480), interpolation=cv2.INTER_LINEAR)
+            if sw > 640:
+                preview_frame = cv2.resize(frame, (640, 360), interpolation=cv2.INTER_LINEAR)
             else:
                 preview_frame = frame
 
             if live_detect:
                 preview_frame = draw_inference_on_frame(preview_frame, conf_val=conf_val, box_thickness=box_thickness, hide_labels=hide_labels)
                 
-            ret, buffer = cv2.imencode('.jpg', preview_frame, [cv2.IMWRITE_JPEG_QUALITY, 55])
+            ret, buffer = cv2.imencode('.jpg', preview_frame, [cv2.IMWRITE_JPEG_QUALITY, 50])
             if not ret:
                 continue
                 
@@ -1333,7 +1333,7 @@ def pi_video_feed():
     conf_val = float(request.args.get('conf', 0.15))
     box_thickness = int(request.args.get('box_thickness', 2))
     hide_labels = str(request.args.get('hide_labels', 'false')).lower() in ['true', '1', 'yes']
-    target_fps = int(request.args.get('fps', 18))
+    target_fps = int(request.args.get('fps', 20))
             
     camera_id = None
     if 'camera_id' in request.args:
@@ -1342,7 +1342,13 @@ def pi_video_feed():
         except ValueError:
             pass
     
-    return Response(gen_pi_camera_frames(live_detect, conf_val, box_thickness, hide_labels, camera_id, target_fps), mimetype='multipart/x-mixed-replace; boundary=frame')
+    resp = Response(gen_pi_camera_frames(live_detect, conf_val, box_thickness, hide_labels, camera_id, target_fps), mimetype='multipart/x-mixed-replace; boundary=frame')
+    # Prevent Cloudflare and reverse proxies from queuing/buffering video chunks
+    resp.headers['X-Accel-Buffering'] = 'no'
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
 
 @app.route('/pi_status')
 def pi_status():

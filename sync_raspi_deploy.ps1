@@ -17,6 +17,7 @@ Copy-Item -Path "collect_dataset.py" -Destination $DeployDir -Force
 Copy-Item -Path "setup_autoboot.sh" -Destination $DeployDir -Force
 Copy-Item -Path "setup_tunnel.sh" -Destination $DeployDir -Force
 Copy-Item -Path "setup_boot_tunnel.sh" -Destination $DeployDir -Force
+Copy-Item -Path "start_field_hotspot.sh" -Destination $DeployDir -Force
 Copy-Item -Path "run_tunnel.sh" -Destination $DeployDir -Force
 Copy-Item -Path "rubber_disease.service" -Destination $DeployDir -Force
 Copy-Item -Path "rubber_tunnel.service" -Destination $DeployDir -Force
