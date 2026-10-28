@@ -14,6 +14,8 @@ Write-Host "Copying core application files..." -ForegroundColor Cyan
 Copy-Item -Path "app.py" -Destination $DeployDir -Force
 Copy-Item -Path "raspi_capture.py" -Destination $DeployDir -Force
 Copy-Item -Path "collect_dataset.py" -Destination $DeployDir -Force
+Copy-Item -Path "setup_autoboot.sh" -Destination $DeployDir -Force
+Copy-Item -Path "rubber_disease.service" -Destination $DeployDir -Force
 Copy-Item -Path "static" -Destination $DeployDir -Recurse -Force
 Copy-Item -Path "templates" -Destination $DeployDir -Recurse -Force
 

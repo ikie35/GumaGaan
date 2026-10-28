@@ -35,35 +35,39 @@ PI_CAMERA_INDEX = int(os.environ.get("CAM_INDEX", "0"))
 class PiCameraWrapper:
     """Seamless hybrid camera wrapper: Picamera2 (native Bookworm) -> OpenCV VideoCapture."""
     def __init__(self, camera_id=0):
-        self.camera_id = camera_id
+        self.camera_id = camera_id if camera_id is not None else PI_CAMERA_INDEX
         self.backend = None
         self.picam2 = None
         self.cap = None
         self.consecutive_failures = 0
+        self.last_error = None
         self._init_camera()
 
     def _init_camera(self):
         # 1. Native Picamera2 (Matches IncuVision Raspberry Pi 5 proven configuration)
         try:
             from picamera2 import Picamera2
-            print("[Camera] Initializing native Picamera2 (IncuVision mode)...")
-            p2 = Picamera2()
-            config = p2.create_video_configuration(main={"size": (1280, 720)})
+            print(f"[Camera] Initializing native Picamera2 (camera_id={self.camera_id})...")
+            p2 = Picamera2(self.camera_id)
+            config = p2.create_video_configuration(main={"size": (1280, 720), "format": "RGB888"})
             p2.configure(config)
             try:
                 # Enable Continuous Autofocus for IMX708 PDAF
                 p2.set_controls({"AfMode": 2})
-            except Exception:
-                pass
+            except Exception as af_err:
+                print(f"[Camera] AF mode notice: {af_err}")
             p2.start()
-            time.sleep(0.4)
+            time.sleep(0.3)
             self.picam2 = p2
             self.backend = "picam2"
             self.consecutive_failures = 0
+            self.last_error = None
             print("[Camera] SUCCESS: Native Raspberry Pi Camera (Picamera2) initialized! ✅")
             return
         except Exception as e:
-            print(f"[Camera] Picamera2 init error ({e}), testing USB / OpenCV...")
+            err_str = str(e)
+            print(f"[Camera] Picamera2 init error ({err_str}), testing USB / OpenCV...")
+            self.last_error = err_str
             self.picam2 = None
 
         # 2. USB Camera via OpenCV
@@ -78,6 +82,7 @@ class PiCameraWrapper:
                         self.cap = cap
                         self.backend = "opencv"
                         self.consecutive_failures = 0
+                        self.last_error = None
                         print(f"[Camera] SUCCESS: Pi Camera active via OpenCV (/dev/video{cid})! ✅")
                         return
                     else:
@@ -1348,6 +1353,7 @@ def camera_diagnostics_route():
     diag = {
         "picam2_imported": False,
         "picam2_error": None,
+        "last_camera_error": None,
         "active_backend": None,
         "cameras_detected": [],
         "camera_running": False
@@ -1362,14 +1368,19 @@ def camera_diagnostics_route():
     if global_camera is not None and global_camera.isOpened():
         diag["active_backend"] = global_camera.backend
         diag["camera_running"] = True
+    elif global_camera is not None:
+        diag["last_camera_error"] = getattr(global_camera, 'last_error', None)
         
     for tool in ["rpicam-hello", "libcamera-hello"]:
         try:
             res = subprocess.run([tool, "--list-cameras"], capture_output=True, text=True, timeout=3)
-            for line in res.stdout.strip().splitlines():
-                if line.strip():
-                    diag["cameras_detected"].append(line.strip())
-            break
+            combined_out = (res.stdout or "") + "\n" + (res.stderr or "")
+            for line in combined_out.strip().splitlines():
+                line_str = line.strip()
+                if line_str and not line_str.startswith("Available cameras") and not line_str.startswith("---"):
+                    diag["cameras_detected"].append(line_str)
+            if diag["cameras_detected"]:
+                break
         except Exception:
             continue
             

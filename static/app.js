@@ -526,8 +526,44 @@ document.addEventListener("DOMContentLoaded", () => {
         if (telemetryFpsText) telemetryFpsText.textContent = "-- FPS";
     }
 
+    // Raspberry Pi Physical Camera Management & Auto-Reconnection Engine
+    let isPiCameraActive = false;
+    let piStreamRetryTimer = null;
+
+    function buildPiStreamUrl() {
+        const thickness = boxThicknessSelect ? boxThicknessSelect.value : 2;
+        const hideLabels = showLabelsCheckbox ? !showLabelsCheckbox.checked : false;
+        const confVal = DEFAULT_CONF;
+        return `/pi_video_feed?live_detect=${isPiAutoDetecting}&conf=${confVal}&box_thickness=${thickness}&hide_labels=${hideLabels}&_t=${Date.now()}`;
+    }
+
+    if (piCameraStream) {
+        piCameraStream.onerror = () => {
+            if (!isPiCameraActive) return;
+            console.warn("[Pi Camera] Stream connection dropped or waiting for hardware. Reconnecting in 1.5s...");
+            if (piCameraFpsText) piCameraFpsText.textContent = "Connecting...";
+            if (piStreamRetryTimer) clearTimeout(piStreamRetryTimer);
+            piStreamRetryTimer = setTimeout(() => {
+                if (isPiCameraActive && piCameraStream) {
+                    piCameraStream.src = buildPiStreamUrl();
+                }
+            }, 1500);
+        };
+        piCameraStream.onload = () => {
+            if (piStreamRetryTimer) {
+                clearTimeout(piStreamRetryTimer);
+                piStreamRetryTimer = null;
+            }
+        };
+    }
+
     // Stop the Raspberry Pi camera stream
     function stopPiCamera() {
+        isPiCameraActive = false;
+        if (piStreamRetryTimer) {
+            clearTimeout(piStreamRetryTimer);
+            piStreamRetryTimer = null;
+        }
         isPiAutoDetecting = false;
         if (togglePiAutoDetectBtn) {
             togglePiAutoDetectBtn.classList.remove("active");
@@ -574,14 +610,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (cameraActionsPanel) cameraActionsPanel.classList.add("hidden");
         piCameraContainer.classList.remove("hidden");
         
+        isPiCameraActive = true;
+        if (piStreamRetryTimer) {
+            clearTimeout(piStreamRetryTimer);
+            piStreamRetryTimer = null;
+        }
+
         startPiStatusPolling();
         
-        // Get thickness and label settings
-        const thickness = boxThicknessSelect ? boxThicknessSelect.value : 2;
-        const hideLabels = showLabelsCheckbox ? !showLabelsCheckbox.checked : false;
-        
         // Set the src to the MJPEG route with cache-busting timestamp
-        piCameraStream.src = `/pi_video_feed?live_detect=false&box_thickness=${thickness}&hide_labels=${hideLabels}&_t=${Date.now()}`;
+        piCameraStream.src = buildPiStreamUrl();
     }
 
     const togglePiFullscreenBtn = document.getElementById("togglePiFullscreenBtn");
@@ -619,30 +657,23 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!piCameraStream) return;
         isPiAutoDetecting = !isPiAutoDetecting;
         
-        const confVal = DEFAULT_CONF;
-        const thickness = boxThicknessSelect ? boxThicknessSelect.value : 2;
-        const hideLabels = showLabelsCheckbox ? !showLabelsCheckbox.checked : false;
-        
         if (isPiAutoDetecting) {
             togglePiAutoDetectBtn.classList.add("active");
             togglePiAutoDetectBtn.innerHTML = `<i data-lucide="square" style="margin-right: 0.5rem; vertical-align: middle;"></i> Stop Auto-Detect`;
             lucide.createIcons();
-            piCameraStream.src = `/pi_video_feed?live_detect=true&conf=${confVal}&box_thickness=${thickness}&hide_labels=${hideLabels}&_t=${Date.now()}`;
+            piCameraStream.src = buildPiStreamUrl();
         } else {
             togglePiAutoDetectBtn.classList.remove("active");
             togglePiAutoDetectBtn.innerHTML = `<i data-lucide="play" style="margin-right: 0.5rem; vertical-align: middle;"></i> Start Auto-Detect`;
             lucide.createIcons();
-            piCameraStream.src = `/pi_video_feed?live_detect=false&box_thickness=${thickness}&hide_labels=${hideLabels}&_t=${Date.now()}`;
+            piCameraStream.src = buildPiStreamUrl();
         }
     }
 
     // Function to reload the active Pi camera feed when configurations change
     function updatePiCameraFeedSource() {
-        if (piCameraContainer && !piCameraContainer.classList.contains("hidden") && piCameraStream) {
-            const confVal = DEFAULT_CONF;
-            const thickness = boxThicknessSelect ? boxThicknessSelect.value : 2;
-            const hideLabels = showLabelsCheckbox ? !showLabelsCheckbox.checked : false;
-            piCameraStream.src = `/pi_video_feed?live_detect=${isPiAutoDetecting}&conf=${confVal}&box_thickness=${thickness}&hide_labels=${hideLabels}&_t=${Date.now()}`;
+        if (isPiCameraActive && piCameraContainer && !piCameraContainer.classList.contains("hidden") && piCameraStream) {
+            piCameraStream.src = buildPiStreamUrl();
         }
     }
 
