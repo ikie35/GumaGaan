@@ -1,0 +1,17 @@
+[Unit]
+Description=Rubber Leaf AI Guard Boot Cloudflare Tunnel
+After=network-online.target rubber_disease.service
+Wants=network-online.target rubber_disease.service
+
+[Service]
+Type=simple
+User=ikee
+Group=ikee
+WorkingDirectory=/home/ikee/rubber_guard
+ExecStart=/bin/bash /home/ikee/rubber_guard/run_tunnel.sh
+Restart=always
+RestartSec=5
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target
