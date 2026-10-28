@@ -66,25 +66,30 @@ class PiCameraWrapper:
                 pass
                 
             p2.start()
-            time.sleep(0.4)
+            # Allow sensor auto-exposure, gain, and PDAF to lock
+            time.sleep(0.8)
             
-            # Verify test capture
-            test_frame = p2.capture_array()
-            if test_frame is not None and test_frame.size > 0:
-                self.picam2 = p2
-                self.backend = "picam2"
-                self.consecutive_failures = 0
-                print("[Camera] Pi Camera Module 3 opened via native Picamera2 (with continuous autofocus)! ✅")
-                return
-            else:
-                p2.stop()
-                p2.close()
+            # Retry first frame grab up to 5 times
+            for attempt in range(5):
+                try:
+                    test_frame = p2.capture_array()
+                    if test_frame is not None and test_frame.size > 0:
+                        self.picam2 = p2
+                        self.backend = "picam2"
+                        self.consecutive_failures = 0
+                        print(f"[Camera] Pi Camera Module 3 active via Picamera2 (attempt {attempt+1})! ✅")
+                        return
+                except Exception as frame_err:
+                    print(f"[Camera] Warm-up frame grab {attempt+1}: {frame_err}")
+                time.sleep(0.2)
+                
+            p2.stop()
+            p2.close()
         except Exception as e:
-            print(f"[Camera] Picamera2 init notice: {e}, falling back to OpenCV...")
+            print(f"[Camera] Picamera2 init notice: {e}, testing OpenCV fallback...")
 
         # 2. Try OpenCV VideoCapture with active frame validation
-        candidate_indices = [self.camera_id, 0, 1, 2, -1]
-        for cid in candidate_indices:
+        for cid in [self.camera_id, 0]:
             try:
                 print(f"[Camera] Testing OpenCV VideoCapture (index={cid})...")
                 cap = cv2.VideoCapture(cid)
@@ -97,7 +102,7 @@ class PiCameraWrapper:
                         self.cap = cap
                         self.backend = "opencv"
                         self.consecutive_failures = 0
-                        print(f"[Camera] Pi Camera opened successfully via OpenCV (index={cid})! ✅")
+                        print(f"[Camera] Pi Camera active via OpenCV (index={cid})! ✅")
                         return
                     else:
                         cap.release()
@@ -160,12 +165,23 @@ class PiCameraWrapper:
         self.backend = None
         self.consecutive_failures = 0
 
+last_camera_init_attempt = 0.0
+CAMERA_INIT_COOLDOWN = 3.0  # Prevent thread locking by throttling hardware re-inits
+
 def get_camera(camera_id=None):
-    global global_camera
+    global global_camera, last_camera_init_attempt
     if camera_id is None:
         camera_id = PI_CAMERA_INDEX
-    if global_camera is None or not global_camera.isOpened():
-        global_camera = PiCameraWrapper(camera_id)
+        
+    if global_camera is not None and global_camera.isOpened():
+        return global_camera
+        
+    now = time.perf_counter()
+    if now - last_camera_init_attempt < CAMERA_INIT_COOLDOWN:
+        return None
+        
+    last_camera_init_attempt = now
+    global_camera = PiCameraWrapper(camera_id)
     return global_camera if global_camera.isOpened() else None
 
 def read_camera_frame():
@@ -1263,6 +1279,13 @@ def gen_pi_camera_frames(live_detect=False, conf_val=0.15, box_thickness=2, hide
     alpha = 0.1
     last_placeholder_time = 0.0
     
+    # Yield initial frame immediately so browser receives HTTP 200 OK without timeout
+    init_frame = make_status_frame("Connecting to Pi Camera Module 3...")
+    ret_init, buf_init = cv2.imencode('.jpg', init_frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+    if ret_init:
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + buf_init.tobytes() + b'\r\n')
+    
     while True:
         loop_start = time.perf_counter()
         
@@ -1340,6 +1363,39 @@ def close_pi_camera_route():
     with camera_lock:
         release_camera()
     return jsonify({"status": "Pi camera released"})
+
+@app.route('/api/camera/diagnostics', methods=['GET'])
+def camera_diagnostics_route():
+    import subprocess
+    diag = {
+        "picam2_imported": False,
+        "picam2_error": None,
+        "active_backend": None,
+        "cameras_detected": [],
+        "camera_running": False
+    }
+    try:
+        from picamera2 import Picamera2
+        diag["picam2_imported"] = True
+    except Exception as e:
+        diag["picam2_error"] = str(e)
+        
+    global global_camera
+    if global_camera is not None and global_camera.isOpened():
+        diag["active_backend"] = global_camera.backend
+        diag["camera_running"] = True
+        
+    for tool in ["rpicam-hello", "libcamera-hello"]:
+        try:
+            res = subprocess.run([tool, "--list-cameras"], capture_output=True, text=True, timeout=3)
+            for line in res.stdout.strip().splitlines():
+                if line.strip():
+                    diag["cameras_detected"].append(line.strip())
+            break
+        except Exception:
+            continue
+            
+    return jsonify(diag)
 
 @app.route('/predict_pi_camera', methods=['POST'])
 def predict_pi_camera():

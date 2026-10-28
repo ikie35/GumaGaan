@@ -580,8 +580,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const thickness = boxThicknessSelect ? boxThicknessSelect.value : 2;
         const hideLabels = showLabelsCheckbox ? !showLabelsCheckbox.checked : false;
         
-        // Set the src to the MJPEG route
-        piCameraStream.src = `/pi_video_feed?live_detect=false&box_thickness=${thickness}&hide_labels=${hideLabels}`;
+        // Set the src to the MJPEG route with cache-busting timestamp
+        piCameraStream.src = `/pi_video_feed?live_detect=false&box_thickness=${thickness}&hide_labels=${hideLabels}&_t=${Date.now()}`;
     }
 
     const togglePiFullscreenBtn = document.getElementById("togglePiFullscreenBtn");
@@ -627,12 +627,12 @@ document.addEventListener("DOMContentLoaded", () => {
             togglePiAutoDetectBtn.classList.add("active");
             togglePiAutoDetectBtn.innerHTML = `<i data-lucide="square" style="margin-right: 0.5rem; vertical-align: middle;"></i> Stop Auto-Detect`;
             lucide.createIcons();
-            piCameraStream.src = `/pi_video_feed?live_detect=true&conf=${confVal}&box_thickness=${thickness}&hide_labels=${hideLabels}`;
+            piCameraStream.src = `/pi_video_feed?live_detect=true&conf=${confVal}&box_thickness=${thickness}&hide_labels=${hideLabels}&_t=${Date.now()}`;
         } else {
             togglePiAutoDetectBtn.classList.remove("active");
             togglePiAutoDetectBtn.innerHTML = `<i data-lucide="play" style="margin-right: 0.5rem; vertical-align: middle;"></i> Start Auto-Detect`;
             lucide.createIcons();
-            piCameraStream.src = `/pi_video_feed?live_detect=false&box_thickness=${thickness}&hide_labels=${hideLabels}`;
+            piCameraStream.src = `/pi_video_feed?live_detect=false&box_thickness=${thickness}&hide_labels=${hideLabels}&_t=${Date.now()}`;
         }
     }
 
@@ -642,7 +642,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const confVal = DEFAULT_CONF;
             const thickness = boxThicknessSelect ? boxThicknessSelect.value : 2;
             const hideLabels = showLabelsCheckbox ? !showLabelsCheckbox.checked : false;
-            piCameraStream.src = `/pi_video_feed?live_detect=${isPiAutoDetecting}&conf=${confVal}&box_thickness=${thickness}&hide_labels=${hideLabels}`;
+            piCameraStream.src = `/pi_video_feed?live_detect=${isPiAutoDetecting}&conf=${confVal}&box_thickness=${thickness}&hide_labels=${hideLabels}&_t=${Date.now()}`;
         }
     }
 
