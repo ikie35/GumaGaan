@@ -21,11 +21,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const videoCanvas = document.getElementById("videoCanvas");
     const cameraActionsPanel = document.getElementById("cameraActionsPanel");
     const toggleFullscreenBtn = document.getElementById("toggleFullscreenBtn");
+    const saveBrowserSnapshotBtn = document.getElementById("saveBrowserSnapshotBtn");
     
     // Pi Physical Camera integration elements
     const startPiCameraBtn = document.getElementById("startPiCameraBtn");
     const stopPiCameraBtn = document.getElementById("stopPiCameraBtn");
     const capturePiBtn = document.getElementById("capturePiBtn");
+    const savePiSnapshotBtn = document.getElementById("savePiSnapshotBtn");
     const piCameraContainer = document.getElementById("piCameraContainer");
     const piCameraStream = document.getElementById("piCameraStream");
     const togglePiAutoDetectBtn = document.getElementById("togglePiAutoDetectBtn");
@@ -879,6 +881,110 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
                 lucide.createIcons();
             }
+        });
+    }
+
+    // ── Toast Notification & Camera Shutter Effect System ──
+    function showToastNotification(message, type = "success") {
+        const container = document.getElementById("cameraToastContainer") || document.body;
+        const toast = document.createElement("div");
+        toast.className = `camera-toast toast-${type}`;
+        const iconName = type === "success" ? "check-circle-2" : "alert-triangle";
+        toast.innerHTML = `<i data-lucide="${iconName}" style="color: ${type === 'success' ? 'var(--lbp-green)' : 'var(--status-plfd)'};"></i><span>${message}</span>`;
+        container.appendChild(toast);
+        lucide.createIcons();
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            toast.style.transform = "translateY(20px) scale(0.95)";
+            setTimeout(() => {
+                if (toast.parentNode) toast.parentNode.removeChild(toast);
+            }, 350);
+        }, 3200);
+    }
+
+    function triggerCameraFlash(wrapperId) {
+        const wrapper = document.getElementById(wrapperId);
+        if (wrapper) {
+            wrapper.classList.remove("shutter-flash");
+            void wrapper.offsetWidth;
+            wrapper.classList.add("shutter-flash");
+            setTimeout(() => wrapper.classList.remove("shutter-flash"), 400);
+        }
+    }
+
+    // ── Normal Capture from Pi Camera -> Save / Download to this Device (IncuVision style) ──
+    if (savePiSnapshotBtn) {
+        savePiSnapshotBtn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            triggerCameraFlash("piVideoWrapper");
+            const originalHtml = savePiSnapshotBtn.innerHTML;
+            savePiSnapshotBtn.disabled = true;
+            savePiSnapshotBtn.innerHTML = `<i data-lucide="loader-2" style="animation: spin 1s linear infinite; margin-right: 0.35rem;"></i> Saving...`;
+            lucide.createIcons();
+
+            try {
+                const now = new Date();
+                const tsSlug = now.toISOString().replace(/[-:T]/g, "").slice(0, 14);
+                const snapshotFilename = `RubberLeaf_PiSnapshot_${tsSlug}.jpg`;
+
+                // Fetch high-res snapshot blob from Pi
+                const response = await fetch(`/api/camera/snapshot?download=1&_t=${Date.now()}`);
+                if (!response.ok) throw new Error("Pi camera hardware returned error status: " + response.status);
+                
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+
+                // Direct browser download onto this device
+                const downloadLink = document.createElement("a");
+                downloadLink.href = blobUrl;
+                downloadLink.download = snapshotFilename;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(blobUrl);
+
+                showToastNotification(`📸 Photo saved to your device: ${snapshotFilename}`, "success");
+            } catch (err) {
+                console.error("Save snapshot error:", err);
+                showToastNotification("Failed to capture snapshot from Pi camera.", "error");
+            } finally {
+                setTimeout(() => {
+                    savePiSnapshotBtn.disabled = false;
+                    savePiSnapshotBtn.innerHTML = originalHtml;
+                    lucide.createIcons();
+                }, 400);
+            }
+        });
+    }
+
+    // ── Normal Capture from Browser Camera -> Save / Download to this Device (IncuVision style) ──
+    if (saveBrowserSnapshotBtn) {
+        saveBrowserSnapshotBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (!videoFeed || videoFeed.readyState < 2) return;
+
+            triggerCameraFlash("videoWrapper");
+            const offCanvas = document.createElement("canvas");
+            offCanvas.width = videoFeed.videoWidth || 1280;
+            offCanvas.height = videoFeed.videoHeight || 720;
+            const offCtx = offCanvas.getContext("2d");
+            offCtx.drawImage(videoFeed, 0, 0, offCanvas.width, offCanvas.height);
+
+            const now = new Date();
+            const tsSlug = now.toISOString().replace(/[-:T]/g, "").slice(0, 14);
+            const snapshotFilename = `RubberLeaf_BrowserSnapshot_${tsSlug}.jpg`;
+
+            const link = document.createElement("a");
+            link.download = snapshotFilename;
+            link.href = offCanvas.toDataURL("image/jpeg", 0.95);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToastNotification(`📸 Photo saved to your device: ${snapshotFilename}`, "success");
         });
     }
 

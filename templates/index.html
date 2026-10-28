@@ -113,11 +113,14 @@
                         <button type="button" class="btn btn-secondary" id="togglePiAutoDetectBtn">
                             <i data-lucide="play"></i> Auto-Detect
                         </button>
-                        <button type="button" class="btn btn-primary" id="capturePiReviewBtn" title="Capture snapshot to inspect, categorize, and save or discard">
-                            <i data-lucide="camera"></i> Capture &amp; Review
+                        <button type="button" class="btn btn-primary" id="capturePiBtn" title="Direct two-stage AI leaf detection & foliar disease diagnosis">
+                            <i data-lucide="zap"></i> AI Capture
                         </button>
-                        <button type="button" class="btn btn-secondary" id="capturePiBtn" title="Direct two-stage AI diagnosis">
-                            <i data-lucide="zap"></i> Instant AI
+                        <button type="button" class="btn btn-secondary" id="savePiSnapshotBtn" title="Take normal photo snapshot and save/download directly to this device (IncuVision style)">
+                            <i data-lucide="download"></i> Save Photo
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="capturePiReviewBtn" title="Capture snapshot to inspect, categorize, and save to model refinement pool">
+                            <i data-lucide="folder-plus"></i> Pool Review
                         </button>
                         <button type="button" class="btn btn-outline-danger" id="stopPiCameraBtn">
                             Close Feed
@@ -139,11 +142,14 @@
                         <button type="button" class="btn btn-secondary" id="toggleLiveDetectBtn">
                             <i data-lucide="play"></i> Auto-Detect
                         </button>
-                        <button type="button" class="btn btn-primary" id="captureReviewBtn" title="Capture snapshot to inspect, categorize, and save or discard">
-                            <i data-lucide="camera"></i> Capture &amp; Review
+                        <button type="button" class="btn btn-primary" id="captureBtn" title="Direct two-stage AI leaf detection & foliar disease diagnosis">
+                            <i data-lucide="zap"></i> AI Capture
                         </button>
-                        <button type="button" class="btn btn-secondary" id="captureBtn" title="Direct two-stage AI diagnosis">
-                            <i data-lucide="zap"></i> Instant AI
+                        <button type="button" class="btn btn-secondary" id="saveBrowserSnapshotBtn" title="Take normal photo snapshot and save/download directly to this device (IncuVision style)">
+                            <i data-lucide="download"></i> Save Photo
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="captureReviewBtn" title="Capture snapshot to inspect, categorize, and save to model refinement pool">
+                            <i data-lucide="folder-plus"></i> Pool Review
                         </button>
                         <button type="button" class="btn btn-outline-danger" id="stopCameraBtn">
                             Cancel
@@ -384,6 +390,9 @@
             </div>
         </section>
     </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="cameraToastContainer" class="camera-toast-container"></div>
 
     <!-- Initialize icons -->
     <script>

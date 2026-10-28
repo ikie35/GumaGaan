@@ -1348,6 +1348,43 @@ def close_pi_camera_route():
         release_camera()
     return jsonify({"status": "Pi camera released"})
 
+@app.route('/api/camera/snapshot', methods=['GET', 'POST'])
+def camera_snapshot_route():
+    """Captures a pristine high-resolution JPEG snapshot and returns it for direct download to device."""
+    import io
+    with camera_lock:
+        cam = get_camera()
+        if cam is None:
+            return jsonify({"error": "Camera hardware not ready or busy."}), 503
+        success, frame = read_camera_frame()
+        if not success or frame is None:
+            return jsonify({"error": "Could not acquire frame from camera."}), 500
+
+    # Save a permanent backup copy on the Pi
+    snapshots_dir = FIELD_LOGS_DIR / "snapshots"
+    snapshots_dir.mkdir(parents=True, exist_ok=True)
+    ts_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    snapshot_filename = f"RubberLeaf_Snapshot_{ts_str}.jpg"
+    snapshot_path = snapshots_dir / snapshot_filename
+    try:
+        cv2.imwrite(str(snapshot_path), frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    except Exception as e:
+        print(f"[Snapshot] Warning saving local backup: {e}")
+
+    ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+    if not ret:
+        return jsonify({"error": "Failed to encode snapshot image."}), 500
+
+    download_arg = request.args.get('download', '1')
+    as_attachment = str(download_arg).lower() in ['1', 'true', 'yes']
+
+    return send_file(
+        io.BytesIO(buffer.tobytes()),
+        mimetype='image/jpeg',
+        as_attachment=as_attachment,
+        download_name=snapshot_filename
+    )
+
 @app.route('/api/camera/diagnostics', methods=['GET'])
 def camera_diagnostics_route():
     import subprocess
