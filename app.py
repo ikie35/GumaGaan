@@ -31,6 +31,7 @@ global_camera = None
 
 # Camera index — 0 is the only Pi Camera Module 3 Wide (Arducam removed)
 PI_CAMERA_INDEX = int(os.environ.get("CAM_INDEX", "0"))
+current_camera_zoom = float(os.environ.get("CAM_ZOOM", "1.0"))
 
 class PiCameraWrapper:
     """Seamless hybrid camera wrapper: Picamera2 (native Bookworm) -> OpenCV VideoCapture."""
@@ -39,6 +40,8 @@ class PiCameraWrapper:
         self.backend = None
         self.picam2 = None
         self.cap = None
+        self.sensor_size = (4608, 2592)  # Sony IMX708 native 12MP array
+        self.zoom_factor = current_camera_zoom
         self.consecutive_failures = 0
         self.last_error = None
         self._init_camera()
@@ -49,20 +52,35 @@ class PiCameraWrapper:
             from picamera2 import Picamera2
             print(f"[Camera] Initializing native Picamera2 (camera_id={self.camera_id})...")
             p2 = Picamera2(self.camera_id)
+            try:
+                props = p2.camera_properties
+                if "PixelArraySize" in props:
+                    self.sensor_size = tuple(props["PixelArraySize"])
+            except Exception:
+                pass
             # libcamera 'RGB888' packs bytes in memory in (B, G, R) order, which matches OpenCV natively without extra color conversions
             config = p2.create_video_configuration(main={"size": (1280, 720), "format": "RGB888"})
             p2.configure(config)
             try:
-                # Enable Continuous Autofocus for IMX708 PDAF
-                p2.set_controls({"AfMode": 2})
+                # Enable Continuous Autofocus (PDAF), Fast AF speed, and Centre-Weighted AE metering for canopy lighting
+                p2.set_controls({
+                    "AfMode": 2,           # Continuous Autofocus
+                    "AfSpeed": 1,          # Fast PDAF tracking across close/far distances
+                    "AeMeteringMode": 0    # Centre-weighted metering (prevents sky/background glare from darkening leaves)
+                })
             except Exception as af_err:
-                print(f"[Camera] AF mode notice: {af_err}")
+                try:
+                    p2.set_controls({"AfMode": 2})
+                except Exception:
+                    print(f"[Camera] AF mode notice: {af_err}")
             p2.start()
             time.sleep(0.3)
             self.picam2 = p2
             self.backend = "picam2"
             self.consecutive_failures = 0
             self.last_error = None
+            if self.zoom_factor > 1.0:
+                self.set_zoom(self.zoom_factor)
             print("[Camera] SUCCESS: Native Raspberry Pi Camera (Picamera2) initialized! ✅")
             return
         except Exception as e:
@@ -106,6 +124,38 @@ class PiCameraWrapper:
     def isOpened(self):
         return self.is_opened()
 
+    def set_zoom(self, zoom_factor=1.0):
+        """Hardware lossless sensor crop (ScalerCrop) on IMX708 12MP (4608x2592) array."""
+        z = max(1.0, min(4.0, float(zoom_factor)))
+        self.zoom_factor = z
+        if self.backend == "picam2" and self.picam2 is not None:
+            try:
+                full_w, full_h = self.sensor_size
+                crop_w = int(full_w / z)
+                crop_h = int(full_h / z)
+                # Align to even pixel boundaries for Bayer sensor
+                crop_w -= (crop_w % 2)
+                crop_h -= (crop_h % 2)
+                x_off = ((full_w - crop_w) // 2) & ~1
+                y_off = ((full_h - crop_h) // 2) & ~1
+                self.picam2.set_controls({"ScalerCrop": (x_off, y_off, crop_w, crop_h)})
+                print(f"[Camera] IMX708 Lossless Sensor Zoom -> {z:.1f}x | ScalerCrop=({x_off}, {y_off}, {crop_w}, {crop_h})")
+                return True
+            except Exception as e:
+                print(f"[Camera] ScalerCrop notice ({e}), using software center crop fallback.")
+        return True
+
+    def _apply_software_zoom(self, frame):
+        if self.zoom_factor <= 1.0 or frame is None:
+            return frame
+        h, w = frame.shape[:2]
+        cw = int(w / self.zoom_factor)
+        ch = int(h / self.zoom_factor)
+        x1 = (w - cw) // 2
+        y1 = (h - ch) // 2
+        cropped = frame[y1:y1+ch, x1:x1+cw]
+        return cv2.resize(cropped, (w, h), interpolation=cv2.INTER_CUBIC)
+
     def read(self):
         if self.backend == "picam2" and self.picam2 is not None:
             try:
@@ -122,7 +172,7 @@ class PiCameraWrapper:
                 ret, frame = self.cap.read()
                 if ret and frame is not None and frame.size > 0:
                     self.consecutive_failures = 0
-                    return True, frame
+                    return True, self._apply_software_zoom(frame)
             except Exception as e:
                 print(f"[Camera] OpenCV frame grab error: {e}")
                 
@@ -1293,19 +1343,14 @@ def gen_pi_camera_frames(live_detect=False, conf_val=0.15, box_thickness=2, hide
             continue
             
         try:
-            # Ultra-low latency optimization:
-            # 640x360 preview at 50% quality produces ~12KB frames that stream without proxy buffering.
-            # Full native 1280x720 pristine resolution is strictly preserved for AI diagnosis and photo snapshots.
-            sh, sw = frame.shape[:2]
-            if sw > 640:
-                preview_frame = cv2.resize(frame, (640, 360), interpolation=cv2.INTER_LINEAR)
-            else:
-                preview_frame = frame
+            # Full native 1280x720 HD resolution is preserved for both Live AI Detection and streaming
+            # so distant leaves retain 4x more pixel detail for Stage 1 detection and Stage 2 classification.
+            preview_frame = frame.copy() if live_detect else frame
 
             if live_detect:
                 preview_frame = draw_inference_on_frame(preview_frame, conf_val=conf_val, box_thickness=box_thickness, hide_labels=hide_labels)
                 
-            ret, buffer = cv2.imencode('.jpg', preview_frame, [cv2.IMWRITE_JPEG_QUALITY, 50])
+            ret, buffer = cv2.imencode('.jpg', preview_frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
             if not ret:
                 continue
                 
@@ -1352,9 +1397,29 @@ def pi_video_feed():
 
 @app.route('/pi_status')
 def pi_status():
-    global pi_camera_fps
+    global pi_camera_fps, current_camera_zoom
     return jsonify({
-        "fps": pi_camera_fps
+        "fps": pi_camera_fps,
+        "zoom": current_camera_zoom
+    })
+
+@app.route('/api/camera/zoom', methods=['GET', 'POST'])
+def camera_zoom_route():
+    """Adjusts IMX708 lossless sensor zoom (ScalerCrop) dynamically without interrupting video stream."""
+    global current_camera_zoom, global_camera
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        z_val = data.get("zoom", request.form.get("zoom", request.args.get("zoom", 1.0)))
+        try:
+            current_camera_zoom = max(1.0, min(4.0, float(z_val)))
+        except (ValueError, TypeError):
+            current_camera_zoom = 1.0
+        with camera_lock:
+            if global_camera is not None and global_camera.isOpened():
+                global_camera.set_zoom(current_camera_zoom)
+    return jsonify({
+        "success": True,
+        "zoom": current_camera_zoom
     })
 
 @app.route('/close_pi_camera', methods=['POST'])

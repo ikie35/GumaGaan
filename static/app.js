@@ -655,6 +655,36 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // Lossless IMX708 12MP Sensor Zoom Cycle (1.0x Wide -> 1.5x Standard -> 2.0x Canopy -> 3.0x Far)
+    const cyclePiZoomBtn = document.getElementById("cyclePiZoomBtn");
+    const piZoomBtnText = document.getElementById("piZoomBtnText");
+    const ZOOM_LEVELS = [1.0, 1.5, 2.0, 3.0];
+    let currentZoomIdx = 0;
+
+    if (cyclePiZoomBtn) {
+        cyclePiZoomBtn.addEventListener("click", async () => {
+            currentZoomIdx = (currentZoomIdx + 1) % ZOOM_LEVELS.length;
+            const nextZoom = ZOOM_LEVELS[currentZoomIdx];
+            if (piZoomBtnText) {
+                piZoomBtnText.textContent = `Zoom: ${nextZoom.toFixed(1)}x`;
+            }
+            if (nextZoom > 1.0) {
+                cyclePiZoomBtn.classList.add("active");
+            } else {
+                cyclePiZoomBtn.classList.remove("active");
+            }
+            try {
+                await fetch("/api/camera/zoom", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ zoom: nextZoom })
+                });
+            } catch (e) {
+                console.error("Failed to set sensor zoom:", e);
+            }
+        });
+    }
+
     function togglePiAutoDetect() {
         if (!piCameraStream) return;
         isPiAutoDetecting = !isPiAutoDetecting;
