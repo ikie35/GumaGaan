@@ -655,10 +655,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Lossless IMX708 12MP Sensor Zoom Cycle (1.0x Wide -> 1.5x -> 2.0x -> 3.0x -> 3.6x 1:1 HD -> 4.0x Max AI Lossless)
+    // Lossless IMX708 12MP Sensor Zoom Cycle (1.0x Wide -> 2.0x -> 3.0x -> 3.6x 1:1 HD -> 4.0x Max AI Lossless)
     const cyclePiZoomBtn = document.getElementById("cyclePiZoomBtn");
     const piZoomBtnText = document.getElementById("piZoomBtnText");
-    const ZOOM_LEVELS = [1.0, 1.5, 2.0, 3.0, 3.6, 4.0];
+    const ZOOM_LEVELS = [1.0, 2.0, 3.0, 3.6, 4.0];
     let currentZoomIdx = 0;
 
     if (cyclePiZoomBtn) {
